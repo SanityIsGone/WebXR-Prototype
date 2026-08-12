@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>WebXR Prototype</title>
+
+  <link rel="stylesheet" href="styles/main.css">
+
+<!-- A-Frame -->
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+
+<!-- Ammo.js -->
+<script src="https://cdn.jsdelivr.net/npm/ammo.js@0.0.10/ammo.js"></script>
+
+<style>
+  /*
+  body {
+    filter: brightness(100%) contrast(120%) saturate(40%) blur(4px);
+  }
+  */
+</style>
+
+</head>
+<body>
+  <a-scene
+    physics-manager
+    casting-system="hand: right"
+    vr-mode-ui="enabled: true"
+    background="color: #20252b"
+    renderer="
+      antialias: true;
+      colorManagement: true;
+      shadowMapEnabled: true;
+    "
+  >
+
+    <!-- Assets -->
+
+    <a-assets>
+      <a-asset-item
+        id="vr-hand-right"
+        src="models/vr-hand-right.glb"
+      ></a-asset-item>
+    </a-assets>
+
+    <!-- Lighting -->
+    <a-entity
+      light="
+        type: ambient;
+        color: #ffffff;
+        intensity: 1.5;
+      "
+    ></a-entity>
+
+    <a-entity
+      light="
+        type: directional;
+        color: #ffffff;
+        intensity: 2;
+        castShadow: true;
+        shadowMapWidth: 1024;
+        shadowMapHeight: 1024;
+      "
+      position="3 5 2"
+    ></a-entity>
+
+    <!-- Ground -->
+    <a-plane
+      position="0 0 0"
+      rotation="-90 0 0"
+      width="10"
+      height="10"
+      color="#555555"
+      shadow="receive: true"
+    ></a-plane>
+
+    <!-- Player -->
+    <a-entity
+      id="player"
+      position="0 0 0"
+      vr-locomotion
+      desktop-controls="
+        enabled: true;
+        moveSpeed: 3;
+      "
+    >
+
+      <!-- Desktop / VR Camera -->
+      <a-entity
+        id="camera"
+        camera="
+          active: true;
+          fov: 75;
+        "
+        position="0 1.6 0"
+        look-controls="
+          enabled: true;
+          pointerLockEnabled: true;
+        "
+      ></a-entity>
+
+
+      <!-- Left VR Controller -->
+
+      <a-entity
+        id="left-controller"
+        oculus-touch-controls="hand: left"
+        vr-hand="hand: left"
+      ></a-entity>
+
+      <!-- Right VR Controller -->
+      <a-entity
+        id="right-controller"
+        oculus-touch-controls="hand: right"
+        vr-hand="hand: right"
+      ></a-entity>
+    </a-entity>
+
+    <!-- Debug Components -->
+
+    <script src="js/desktop-controls.js"></script>
+    <script src="js/physics.js"></script>
+    <script src="js/abilities.js"></script>
+
+    <!-- Main -->
+    <script src="js/main.js"></script>
+
+  </a-scene>
+
+</body>
+</html>
