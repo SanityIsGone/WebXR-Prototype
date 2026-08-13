@@ -43,6 +43,13 @@ const Physics = {
       right: false
     },
 
+    grabDebugUpdateLogged: false,
+
+    grabDebugContactLogged: {
+      left: false,
+      right: false
+    },
+
   tmpTransform: null,
 
   // Reused Ammo values for per-frame updates and spell raycasts.
@@ -982,10 +989,51 @@ isHandTouchingBall(hand) {
 },
 
 // ==================================================
+// GET BALL POSITION
+// ==================================================
+
+getBallPosition() {
+
+  if (
+    !this.ballBody ||
+    !this.ballBody.getMotionState()
+  ) {
+    return null;
+  }
+
+  this.ballBody
+    .getMotionState()
+    .getWorldTransform(
+      this.tmpTransform
+    );
+
+  const origin =
+    this.tmpTransform.getOrigin();
+
+  return new THREE.Vector3(
+    origin.x(),
+    origin.y(),
+    origin.z()
+  );
+},
+
+// ==================================================
 // GRAB BALL
 // ==================================================
 
 grabBall(hand) {
+
+  console.log(
+    '🧪 GRAB ENTER',
+    {
+      hand,
+      existingHand: this.grabbedBall.hand,
+      contact: this.handBallContacts[hand],
+      ballBody: !!this.ballBody,
+      tmpTransform: !!this.tmpTransform,
+      ammoZero: !!this.ammo.zero
+    }
+  );
 
   // Don't grab if already holding.
   if (
@@ -1014,8 +1062,17 @@ grabBall(hand) {
   }
 
 
+  console.log(
+    '🧪 BEFORE GET BALL POSITION'
+  );
+
   const ballPosition =
     this.getBallPosition();
+
+  console.log(
+    '🧪 AFTER GET BALL POSITION',
+    ballPosition
+  );
 
 
   if (!ballPosition) {
@@ -1045,14 +1102,30 @@ grabBall(hand) {
     );
 
 
+  console.log(
+    '🧪 BEFORE GRABBED-BALL STATE ASSIGNMENT'
+  );
+
   this.grabbedBall.hand =
     hand;
 
   this.grabbedBall.controller =
     controller;
 
+  console.log(
+    '🧪 AFTER GRABBED-BALL STATE ASSIGNMENT',
+    {
+      hand: this.grabbedBall.hand,
+      controller: !!this.grabbedBall.controller
+    }
+  );
+
 
   // Stop current movement.
+
+  console.log(
+    '🧪 BEFORE VELOCITY RESET'
+  );
 
   this.ballBody
     .setLinearVelocity(
@@ -1063,6 +1136,10 @@ grabBall(hand) {
     .setAngularVelocity(
       this.ammo.zero
     );
+
+  console.log(
+    '🧪 AFTER VELOCITY RESET'
+  );
 
 
   console.log(
@@ -1096,6 +1173,9 @@ releaseBall() {
 
   this.grabbedBall.controller =
     null;
+
+  this.grabDebugUpdateLogged =
+    false;
 },
 
 // ==================================================
@@ -1109,6 +1189,23 @@ updateGrabbedBall() {
     !this.grabbedBall.controller
   ) {
     return;
+  }
+
+  const logGrabUpdate =
+    !this.grabDebugUpdateLogged;
+
+  if (logGrabUpdate) {
+    console.log(
+      '🧪 GRAB UPDATE ENTER',
+      {
+        hand: this.grabbedBall.hand,
+        controller: !!this.grabbedBall.controller,
+        ballBody: !!this.ballBody,
+        grabTransform: !!this.ammo.grabTransform,
+        origin: !!this.ammo.origin,
+        zero: !!this.ammo.zero
+      }
+    );
   }
 
 
@@ -1148,6 +1245,12 @@ updateGrabbedBall() {
     this.ammo.origin
   );
 
+  if (logGrabUpdate) {
+    console.log(
+      '🧪 BEFORE GRAB TRANSFORM UPDATE'
+    );
+  }
+
 
   this.ballBody
     .setWorldTransform(
@@ -1161,8 +1264,20 @@ updateGrabbedBall() {
       transform
     );
 
+  if (logGrabUpdate) {
+    console.log(
+      '🧪 AFTER GRAB TRANSFORM UPDATE'
+    );
+  }
+
 
   // Stop physics movement while held.
+
+  if (logGrabUpdate) {
+    console.log(
+      '🧪 BEFORE GRAB VELOCITY UPDATE'
+    );
+  }
 
   this.ballBody
     .setLinearVelocity(
@@ -1173,6 +1288,15 @@ updateGrabbedBall() {
     .setAngularVelocity(
       this.ammo.zero
     );
+
+  if (logGrabUpdate) {
+    console.log(
+      '🧪 AFTER GRAB VELOCITY UPDATE'
+    );
+
+    this.grabDebugUpdateLogged =
+      true;
+  }
 },
 
 // ==================================================
@@ -1239,15 +1363,61 @@ updateGrabInput() {
     const gripping =
       gripValue > 0.5;
 
+    const handHasContact =
+      !!this.handBallContacts[hand];
+
+    const gripStateChanged =
+      gripping !== this.wasGripping[hand];
+
+    const logGrabInput =
+      gripStateChanged ||
+      (
+        handHasContact &&
+        !this.grabDebugContactLogged[hand]
+      );
+
+    if (logGrabInput) {
+      console.log(
+        '🧪 GRAB INPUT STATE',
+        {
+          hand,
+          gripValue,
+          gripping,
+          wasGripping: this.wasGripping[hand],
+          handBallContact: handHasContact
+        }
+      );
+    }
+
+    if (handHasContact) {
+      this.grabDebugContactLogged[hand] = true;
+    } else {
+      this.grabDebugContactLogged[hand] = false;
+    }
+
+    const grabCondition =
+      gripping &&
+      !this.wasGripping[hand];
+
+    if (logGrabInput) {
+      console.log(
+        '🧪 GRAB CONDITION EVALUATION',
+        {
+          hand,
+          grabCondition,
+          gripping,
+          wasGripping: this.wasGripping[hand],
+          handBallContact: handHasContact
+        }
+      );
+    }
+
 
     // ----------------------------------------------
     // GRIP PRESSED
     // ----------------------------------------------
 
-    if (
-      gripping &&
-      !this.wasGripping[hand]
-    ) {
+    if (grabCondition) {
 
       this.grabBall(
         hand
