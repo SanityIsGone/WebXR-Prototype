@@ -1113,7 +1113,7 @@ releaseBall() {
     return;
   }
 
-
+  
   console.log(
     `✋ ${this.grabbedBall.hand} hand released ball`
   );
