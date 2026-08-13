@@ -174,6 +174,12 @@ function getHandRelativeToHeadset() {
 let óthisiCasting = false;
 
 
+let élxiActive = false;
+
+
+let élxiTarget = null;
+
+
 // ==================================================
 // ÓTHISI CASTING POSITIONS
 // ==================================================
@@ -268,9 +274,63 @@ const CASTING_CONFIG = {
   // Timing curve controls. Higher strength/exponent penalizes slower casts.
   óthisiTimingStrength: 1.5,
   óthisiTimingExponent: 1.0,
-  óthisiMinimumTimingMultiplier: 0.1
+  óthisiMinimumTimingMultiplier: 0.1,
+
+  // Élxi requires a half-pressed grip while the trigger is held.
+  élxiGripThreshold: 0.5,
+
+  // Élxi uses the Óthisi pose rotated around the controller's local Z axis.
+  élxiInitialRotationZOffset: THREE.MathUtils.degToRad(90),
+
+  élxiInitialRotationTolerance: {
+    x: 0.15,
+    y: 0.15,
+    z: 0.15
+  },
+
+  // Sustained force applied toward the casting hand.
+  élxiPullForce: 75
 
 };
+
+
+function getÉlxiInitialRotation(
+  handSide
+) {
+
+  const óthisiRotation =
+    CASTING_CONFIG.óthisiInitialRotation;
+
+  const óthisiTargetEuler =
+    new THREE.Euler(
+      óthisiRotation.x,
+      óthisiRotation.y * handSide,
+      óthisiRotation.z * handSide,
+      'XYZ'
+    );
+
+  const óthisiTargetQuaternion =
+    new THREE.Quaternion()
+      .setFromEuler(
+        óthisiTargetEuler
+      );
+
+  const localForwardRotation =
+    new THREE.Quaternion()
+      .setFromAxisAngle(
+        new THREE.Vector3(0, 0, 1),
+        CASTING_CONFIG.élxiInitialRotationZOffset
+      );
+
+  return new THREE.Euler()
+    .setFromQuaternion(
+      óthisiTargetQuaternion
+        .multiply(
+          localForwardRotation
+        ),
+      'XYZ'
+    );
+}
 
 
 function getÓthisiTimingMultiplier(
@@ -473,6 +533,9 @@ AFRAME.registerComponent(
         webxrController.gamepad;
 
       if (!gamepad) {
+        endÉlxi(
+          'gamepad unavailable'
+        );
         return;
       }
 
@@ -484,6 +547,13 @@ AFRAME.registerComponent(
       const triggerPressed =
         triggerValue >=
         CASTING_CONFIG.triggerThreshold;
+
+      const gripButton =
+        gamepad.buttons[1];
+
+      const gripValue =
+        gripButton?.value ??
+        (gripButton?.pressed ? 1 : 0);
 
 
       // ==================================================
@@ -608,6 +678,28 @@ AFRAME.registerComponent(
           triggerPressed
         );
 
+      }
+
+
+      // ==================================================
+      // ÉLXI INITIAL / ACTIVE STATE
+      // ==================================================
+
+      if (élxiActive) {
+
+        updateÉlxi(
+          triggerPressed,
+          gripValue
+        );
+
+      } else if (
+        checkÉlxiInitialGesture(
+          triggerPressed,
+          gripValue
+        )
+      ) {
+
+        activateÉlxi();
       }
 
     },
@@ -771,6 +863,209 @@ function performÓthisi(
     pushStrength
   );
 
+}
+
+
+// =========================================================================
+// ÉLXI — PULL
+// =========================================================================
+
+function checkÉlxiInitialGesture(
+  triggerPressed,
+  gripValue
+) {
+
+  const handRelative =
+    getHandRelativeToHeadset();
+
+  if (!handRelative) {
+    return false;
+  }
+
+  const handSide =
+    castingHand === 'left'
+      ? -1
+      : 1;
+
+  const initialPositionValid =
+    handRelative.leftRight * handSide < 0 &&
+    handRelative.upDown < 0 &&
+    handRelative.forwardBack < 0 &&
+    handRelative.distance < 0.6;
+
+  const controller =
+    getCastingController();
+
+  if (!controller) {
+    return false;
+  }
+
+  const controllerRotation =
+    controller.object3D.rotation;
+
+  const targetRotation =
+    getÉlxiInitialRotation(
+      handSide
+    );
+
+  const rotationTolerance =
+    CASTING_CONFIG.élxiInitialRotationTolerance;
+
+  const initialRotationValid =
+    Math.abs(
+      controllerRotation.x - targetRotation.x
+    ) < rotationTolerance.x &&
+    Math.abs(
+      controllerRotation.y - targetRotation.y
+    ) < rotationTolerance.y &&
+    Math.abs(
+      controllerRotation.z - targetRotation.z
+    ) < rotationTolerance.z;
+
+  const initialButtonsValid =
+    triggerPressed &&
+    gripValue >= CASTING_CONFIG.élxiGripThreshold;
+
+  return (
+    initialPositionValid &&
+    initialRotationValid &&
+    initialButtonsValid
+  );
+}
+
+
+function endÉlxi(
+  reason
+) {
+
+  if (!élxiActive) {
+    return;
+  }
+
+  console.log(
+    '🟣 Élxi ended:',
+    reason
+  );
+
+  élxiActive = false;
+  élxiTarget = null;
+}
+
+
+function activateÉlxi() {
+
+  const ray =
+    getÓthisiRay();
+
+  if (!ray) {
+    return false;
+  }
+
+  const hitBody =
+    Physics.raycast(
+      ray.handPosition,
+      ray.rayEnd
+    );
+
+  if (
+    !hitBody ||
+    !Physics.isValidSpellTarget(hitBody)
+  ) {
+    return false;
+  }
+
+  if (
+    Physics.bodyKey(hitBody) ===
+      Physics.bodyKey(Physics.ballBody) &&
+    Physics.grabbedBall.hand
+  ) {
+    return false;
+  }
+
+  élxiTarget =
+    hitBody;
+
+  élxiActive =
+    true;
+
+  console.log(
+    '🟣 Élxi activated.'
+  );
+
+  return true;
+}
+
+
+function updateÉlxi(
+  triggerPressed,
+  gripValue
+) {
+
+  if (!élxiActive) {
+    return;
+  }
+
+  if (
+    !triggerPressed ||
+    gripValue < CASTING_CONFIG.élxiGripThreshold
+  ) {
+    endÉlxi(
+      'required input released'
+    );
+    return;
+  }
+
+  if (
+    !élxiTarget ||
+    !Physics.isValidSpellTarget(élxiTarget)
+  ) {
+    endÉlxi(
+      'target is no longer valid'
+    );
+    return;
+  }
+
+  if (
+    Physics.bodyKey(élxiTarget) ===
+      Physics.bodyKey(Physics.ballBody) &&
+    Physics.grabbedBall.hand
+  ) {
+    endÉlxi(
+      'target was grabbed'
+    );
+    return;
+  }
+
+  const controller =
+    getCastingController();
+
+  if (!controller) {
+    endÉlxi(
+      'casting controller unavailable'
+    );
+    return;
+  }
+
+  const handPosition =
+    new THREE.Vector3();
+
+  controller.object3D
+    .getWorldPosition(
+      handPosition
+    );
+
+  const pullApplied =
+    Physics.applySpellPull(
+      élxiTarget,
+      handPosition,
+      CASTING_CONFIG.élxiPullForce
+    );
+
+  if (!pullApplied) {
+    endÉlxi(
+      'pull could not be applied'
+    );
+  }
 }
 
 

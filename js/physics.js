@@ -52,6 +52,7 @@ const Physics = {
     zero: null,
     inertia: null,
     impulse: null,
+    pullForce: null,
     rayStart: null,
     rayEnd: null,
     tmpTransform: null,
@@ -117,6 +118,13 @@ const Physics = {
         );
 
       this.ammo.impulse =
+        new Ammo.btVector3(
+          0,
+          0,
+          0
+        );
+
+      this.ammo.pullForce =
         new Ammo.btVector3(
           0,
           0,
@@ -312,6 +320,66 @@ const Physics = {
 
       body.applyCentralImpulse(
         this.ammo.impulse
+      );
+
+      body.activate();
+
+      return true;
+    },
+
+
+    applySpellPull(body, targetPosition, strength) {
+
+      if (
+        !this.isValidSpellTarget(body) ||
+        !targetPosition ||
+        !this.ammo.pullForce
+      ) {
+        return false;
+      }
+
+      const motionState =
+        body.getMotionState();
+
+      if (!motionState) {
+        return false;
+      }
+
+      motionState.getWorldTransform(
+        this.tmpTransform
+      );
+
+      const origin =
+        this.tmpTransform.getOrigin();
+
+      const deltaX =
+        targetPosition.x - origin.x();
+
+      const deltaY =
+        targetPosition.y - origin.y();
+
+      const deltaZ =
+        targetPosition.z - origin.z();
+
+      const distance =
+        Math.sqrt(
+          deltaX * deltaX +
+          deltaY * deltaY +
+          deltaZ * deltaZ
+        );
+
+      if (distance === 0) {
+        return true;
+      }
+
+      this.ammo.pullForce.setValue(
+        deltaX / distance * strength,
+        deltaY / distance * strength,
+        deltaZ / distance * strength
+      );
+
+      body.applyCentralForce(
+        this.ammo.pullForce
       );
 
       body.activate();
