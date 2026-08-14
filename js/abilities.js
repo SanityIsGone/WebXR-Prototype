@@ -279,8 +279,13 @@ const CASTING_CONFIG = {
   // Élxi requires a half-pressed grip while the trigger is held.
   élxiGripThreshold: 0.4,
 
-  // Élxi uses the Óthisi pose rotated around the controller's local Z axis.
-  élxiInitialRotationZOffset: THREE.MathUtils.degToRad(90),
+  // Independent local controller orientation for the initial Élxi pose.
+  élxiInitialRotation: {
+    order: 'YXZ',
+    x: 0.71,
+    y: -1.79,
+    z: -0.40
+  },
 
   élxiInitialRotationTolerance: {
     x: 0.15,
@@ -294,18 +299,57 @@ const CASTING_CONFIG = {
 };
 
 
-function getÉlxiInitialRotation(handSide) {
-  const targetEuler = new THREE.Euler(
-    0.4,
-    -1.4,
-    0.1,
-    'XYZ'
+function isInitialRotationValid(
+  controller,
+  targetRotation,
+  rotationTolerance,
+  handSide
+) {
+
+  const targetEuler =
+    new THREE.Euler(
+      targetRotation.x,
+      targetRotation.y * handSide,
+      targetRotation.z * handSide,
+      targetRotation.order
+    );
+
+  const targetQuaternion =
+    new THREE.Quaternion()
+      .setFromEuler(
+        targetEuler
+      );
+
+  const rotationError =
+    new THREE.Quaternion()
+      .copy(
+        targetQuaternion
+      );
+
+  rotationError.invert();
+
+  rotationError.multiply(
+    controller.object3D.quaternion
   );
 
-  targetEuler.y *= handSide;
-  targetEuler.z *= handSide;
+  const rotationErrorEuler =
+    new THREE.Euler()
+      .setFromQuaternion(
+        rotationError,
+        targetRotation.order
+      );
 
-  return targetEuler;
+  return (
+    Math.abs(
+      rotationErrorEuler.x
+    ) < rotationTolerance.x &&
+    Math.abs(
+      rotationErrorEuler.y
+    ) < rotationTolerance.y &&
+    Math.abs(
+      rotationErrorEuler.z
+    ) < rotationTolerance.z
+  );
 }
 
 
@@ -876,27 +920,19 @@ function checkÉlxiInitialGesture(
     return false;
   }
 
-  const controllerRotation =
-    controller.object3D.rotation;
-
-  const ÉlxitargetRotation =
-    getÉlxiInitialRotation(
-      handSide
-    );
+  const targetRotation =
+    CASTING_CONFIG.élxiInitialRotation;
 
   const rotationTolerance =
     CASTING_CONFIG.élxiInitialRotationTolerance;
 
   const initialRotationValid =
-    Math.abs(
-      controllerRotation.x - ÉlxitargetRotation.x
-    ) < rotationTolerance.x &&
-    Math.abs(
-      controllerRotation.y - ÉlxitargetRotation.y
-    ) < rotationTolerance.y &&
-    Math.abs(
-      controllerRotation.z - ÉlxitargetRotation.z
-    ) < rotationTolerance.z;
+    isInitialRotationValid(
+      controller,
+      targetRotation,
+      rotationTolerance,
+      handSide
+    );
 
   const initialButtonsValid =
     triggerPressed &&
@@ -1100,9 +1136,6 @@ function checkÓthisiInitialGesture(
   }
 
 
-  const controllerRotation =
-    controller.object3D.rotation;
-
   const rotationTarget =
     CASTING_CONFIG.óthisiInitialRotation;
 
@@ -1111,18 +1144,12 @@ function checkÓthisiInitialGesture(
 
 
   const initialRotationValid =
-
-    Math.abs(
-      controllerRotation.x - rotationTarget.x
-    ) < rotationTolerance.x &&
-
-    Math.abs(
-      controllerRotation.y - (rotationTarget.y * handSide)
-    ) < rotationTolerance.y &&
-
-    Math.abs(
-      controllerRotation.z - (rotationTarget.z * handSide)
-    ) < rotationTolerance.z;
+    isInitialRotationValid(
+      controller,
+      rotationTarget,
+      rotationTolerance,
+      handSide
+    );
 
 
   // ==================================================
