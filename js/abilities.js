@@ -294,42 +294,18 @@ const CASTING_CONFIG = {
 };
 
 
-function getÉlxiInitialRotation(
-  handSide
-) {
+function getÉlxiInitialRotation(handSide) {
+  const targetEuler = new THREE.Euler(
+    1.4,
+    -1.4,
+    0.1,
+    'XYZ'
+  );
 
-  const óthisiRotation =
-    CASTING_CONFIG.óthisiInitialRotation;
+  targetEuler.y *= handSide;
+  targetEuler.z *= handSide;
 
-  const óthisiTargetEuler =
-    new THREE.Euler(
-      óthisiRotation.x,
-      óthisiRotation.y * handSide,
-      óthisiRotation.z * handSide,
-      'XYZ'
-    );
-
-  const óthisiTargetQuaternion =
-    new THREE.Quaternion()
-      .setFromEuler(
-        óthisiTargetEuler
-      );
-
-  const localForwardRotation =
-    new THREE.Quaternion()
-      .setFromAxisAngle(
-        new THREE.Vector3(0, 0, 1),
-        CASTING_CONFIG.élxiInitialRotationZOffset
-      );
-
-  return new THREE.Euler()
-    .setFromQuaternion(
-      óthisiTargetQuaternion
-        .multiply(
-          localForwardRotation
-        ),
-      'XYZ'
-    );
+  return targetEuler;
 }
 
 
@@ -998,7 +974,7 @@ function activateÉlxi() {
 
 function updateÉlxi(
   triggerPressed,
-  gripValue
+  gripValue,
 ) {
 
   if (!élxiActive) {
