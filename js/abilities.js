@@ -927,18 +927,6 @@ function endÉlxi(
   élxiTarget = null;
 }
 
-const initialGestureValid =
-  checkÉlxiInitialGesture(
-    triggerPressed,
-    gripValue
-  );
-
-console.log('🟣 Élxi initial gesture:', initialGestureValid);
-
-if (initialGestureValid) {
-  activateÉlxi();
-}
-
 function activateÉlxi() {
 
   const ray =
