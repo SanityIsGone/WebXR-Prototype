@@ -329,7 +329,7 @@ const Physics = {
 
 
     applySpellPull(body, targetPosition, strength) {
-
+     console.log('Ball being pulled!')
       if (
         !this.isValidSpellTarget(body) ||
         !targetPosition ||
