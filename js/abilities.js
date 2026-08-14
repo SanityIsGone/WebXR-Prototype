@@ -256,10 +256,9 @@ const CASTING_CONFIG = {
 
   // Approximate local controller orientation for the initial Óthisi pose.
   óthisiInitialRotation: {
-    order: 'YXZ',
-    x: 1.61,
-    y: 0.51,
-    z: 1.24
+    x: 1.25,
+    y: 0.2,
+    z: 1.25,
   },
 
   // Per-axis tolerance, in radians.
@@ -278,15 +277,10 @@ const CASTING_CONFIG = {
   óthisiMinimumTimingMultiplier: 0.1,
 
   // Élxi requires a half-pressed grip while the trigger is held.
-  élxiGripThreshold: 0.5,
+  élxiGripThreshold: 0.4,
 
-  // Independent local controller orientation for the initial Élxi pose.
-  élxiInitialRotation: {
-    order: 'YXZ',
-    x: 0.71,
-    y: -1.79,
-    z: -0.40
-  },
+  // Élxi uses the Óthisi pose rotated around the controller's local Z axis.
+  élxiInitialRotationZOffset: THREE.MathUtils.degToRad(90),
 
   élxiInitialRotationTolerance: {
     x: 0.15,
@@ -300,57 +294,18 @@ const CASTING_CONFIG = {
 };
 
 
-function isInitialRotationValid(
-  controller,
-  targetRotation,
-  rotationTolerance,
-  handSide
-) {
-
-  const targetEuler =
-    new THREE.Euler(
-      targetRotation.x,
-      targetRotation.y * handSide,
-      targetRotation.z * handSide,
-      targetRotation.order
-    );
-
-  const targetQuaternion =
-    new THREE.Quaternion()
-      .setFromEuler(
-        targetEuler
-      );
-
-  const rotationError =
-    new THREE.Quaternion()
-      .copy(
-        targetQuaternion
-      );
-
-  rotationError.invert();
-
-  rotationError.multiply(
-    controller.object3D.quaternion
+function getÉlxiInitialRotation(handSide) {
+  const targetEuler = new THREE.Euler(
+    0.4,
+    -1.4,
+    0.1,
+    'XYZ'
   );
 
-  const rotationErrorEuler =
-    new THREE.Euler()
-      .setFromQuaternion(
-        rotationError,
-        targetRotation.order
-      );
+  targetEuler.y *= handSide;
+  targetEuler.z *= handSide;
 
-  return (
-    Math.abs(
-      rotationErrorEuler.x
-    ) < rotationTolerance.x &&
-    Math.abs(
-      rotationErrorEuler.y
-    ) < rotationTolerance.y &&
-    Math.abs(
-      rotationErrorEuler.z
-    ) < rotationTolerance.z
-  );
+  return targetEuler;
 }
 
 
@@ -921,19 +876,27 @@ function checkÉlxiInitialGesture(
     return false;
   }
 
-  const targetRotation =
-    CASTING_CONFIG.élxiInitialRotation;
+  const controllerRotation =
+    controller.object3D.rotation;
+
+  const ÉlxitargetRotation =
+    getÉlxiInitialRotation(
+      handSide
+    );
 
   const rotationTolerance =
     CASTING_CONFIG.élxiInitialRotationTolerance;
 
   const initialRotationValid =
-    isInitialRotationValid(
-      controller,
-      targetRotation,
-      rotationTolerance,
-      handSide
-    );
+    Math.abs(
+      controllerRotation.x - ÉlxitargetRotation.x
+    ) < rotationTolerance.x &&
+    Math.abs(
+      controllerRotation.y - ÉlxitargetRotation.y
+    ) < rotationTolerance.y &&
+    Math.abs(
+      controllerRotation.z - ÉlxitargetRotation.z
+    ) < rotationTolerance.z;
 
   const initialButtonsValid =
     triggerPressed &&
@@ -963,7 +926,6 @@ function endÉlxi(
   élxiActive = false;
   élxiTarget = null;
 }
-
 
 function activateÉlxi() {
 
@@ -1011,7 +973,7 @@ function activateÉlxi() {
 
 function updateÉlxi(
   triggerPressed,
-  gripValue
+  gripValue,
 ) {
 
   if (!élxiActive) {
@@ -1138,6 +1100,9 @@ function checkÓthisiInitialGesture(
   }
 
 
+  const controllerRotation =
+    controller.object3D.rotation;
+
   const rotationTarget =
     CASTING_CONFIG.óthisiInitialRotation;
 
@@ -1146,12 +1111,18 @@ function checkÓthisiInitialGesture(
 
 
   const initialRotationValid =
-    isInitialRotationValid(
-      controller,
-      rotationTarget,
-      rotationTolerance,
-      handSide
-    );
+
+    Math.abs(
+      controllerRotation.x - rotationTarget.x
+    ) < rotationTolerance.x &&
+
+    Math.abs(
+      controllerRotation.y - (rotationTarget.y * handSide)
+    ) < rotationTolerance.y &&
+
+    Math.abs(
+      controllerRotation.z - (rotationTarget.z * handSide)
+    ) < rotationTolerance.z;
 
 
   // ==================================================
@@ -1493,12 +1464,30 @@ window.addEventListener(
     ) {
 
       console.log(
-        '🖐️ Hand relative to headset:',
+        '🖥️ PC DEBUG: Casting Élxi',
 
-        getHandRelativeToHeadset()
+        activateÉlxi(),
 
       );
 
+    }
+
+  }
+);
+
+window.addEventListener(
+  'keydown',
+  (event) => {
+
+    if (
+      event.key === '3'
+    ) {
+
+      const controller =
+    getCastingController();
+      const controllerRotation =
+    controller.object3D.rotation;
+      console.log('rotation:', controllerRotation);
     }
 
   }
