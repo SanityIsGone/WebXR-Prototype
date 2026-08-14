@@ -277,7 +277,7 @@ const CASTING_CONFIG = {
   óthisiMinimumTimingMultiplier: 0.1,
 
   // Élxi requires a half-pressed grip while the trigger is held.
-  élxiGripThreshold: 0.5,
+  élxiGripThreshold: 0.4,
 
   // Élxi uses the Óthisi pose rotated around the controller's local Z axis.
   élxiInitialRotationZOffset: THREE.MathUtils.degToRad(90),
@@ -1489,9 +1489,9 @@ window.addEventListener(
     ) {
 
       console.log(
-        '🖐️ Hand relative to headset:',
+        '🖥️ PC DEBUG: Casting Élxi',
 
-        getHandRelativeToHeadset()
+        activateÉlxi(),
 
       );
 
