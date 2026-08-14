@@ -879,7 +879,7 @@ function checkÉlxiInitialGesture(
   const controllerRotation =
     controller.object3D.rotation;
 
-  const targetRotation =
+  const ÉlxitargetRotation =
     getÉlxiInitialRotation(
       handSide
     );
@@ -889,13 +889,13 @@ function checkÉlxiInitialGesture(
 
   const initialRotationValid =
     Math.abs(
-      controllerRotation.x - targetRotation.x
+      controllerRotation.x - ÉlxitargetRotation.x
     ) < rotationTolerance.x &&
     Math.abs(
-      controllerRotation.y - targetRotation.y
+      controllerRotation.y - ÉlxitargetRotation.y
     ) < rotationTolerance.y &&
     Math.abs(
-      controllerRotation.z - targetRotation.z
+      controllerRotation.z - ÉlxitargetRotation.z
     ) < rotationTolerance.z;
 
   const initialButtonsValid =
@@ -927,6 +927,17 @@ function endÉlxi(
   élxiTarget = null;
 }
 
+const initialGestureValid =
+  checkÉlxiInitialGesture(
+    triggerPressed,
+    gripValue
+  );
+
+console.log('🟣 Élxi initial gesture:', initialGestureValid);
+
+if (initialGestureValid) {
+  activateÉlxi();
+}
 
 function activateÉlxi() {
 
