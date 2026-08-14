@@ -296,7 +296,7 @@ const CASTING_CONFIG = {
 
 function getÉlxiInitialRotation(handSide) {
   const targetEuler = new THREE.Euler(
-    1.4,
+    0.4,
     -1.4,
     0.1,
     'XYZ'
