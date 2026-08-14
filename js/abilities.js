@@ -1494,14 +1494,7 @@ window.addEventListener(
     getCastingController();
       const controllerRotation =
     controller.object3D.rotation;
-      console.log('Óthisi rotation:', {
-        x: THREE.MathUtils.radToDeg(controllerRotation.x),
-        y: THREE.MathUtils.radToDeg(controllerRotation.y),
-        z: THREE.MathUtils.radToDeg(controllerRotation.z)
-      }
-
-      );
-
+      console.log('rotation:', controllerRotation);
     }
 
   }
