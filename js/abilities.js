@@ -1154,9 +1154,9 @@ function checkÓthisiInitialGesture(
 
     initialButtonsValid &&
 
-    initialPositionValid //&&
+    initialPositionValid &&
 
-    //initialRotationValid
+    initialRotationValid
 
   ) {
 
