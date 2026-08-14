@@ -329,8 +329,27 @@ function isInitialRotationValid(
 
   rotationError.invert();
 
+  const headsetWorldQuaternion =
+    headset.object3D
+      .getWorldQuaternion(
+        new THREE.Quaternion()
+      );
+
+  const controllerWorldQuaternion =
+    controller.object3D
+      .getWorldQuaternion(
+        new THREE.Quaternion()
+      );
+
+  const headsetRelativeControllerQuaternion =
+    headsetWorldQuaternion
+      .invert()
+      .multiply(
+        controllerWorldQuaternion
+      );
+
   rotationError.multiply(
-    controller.object3D.quaternion
+    headsetRelativeControllerQuaternion
   );
 
   const rotationErrorEuler =
