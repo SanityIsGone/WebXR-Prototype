@@ -958,6 +958,20 @@ function checkÉlxiInitialGesture(
     triggerPressed &&
     gripValue >= CASTING_CONFIG.élxiGripThreshold;
 
+    console.log('🧪 Élxi INITIAL CHECK:', {
+      leftRight: handRelative.leftRight,
+      upDown: handRelative.upDown,
+      forwardBack: handRelative.forwardBack,
+      distance: handRelative.distance,
+  
+      initialPositionValid,
+      initialRotationValid,
+      initialButtonsValid,
+  
+      triggerPressed,
+      gripValue
+    });
+
   return (
     initialPositionValid &&
     initialRotationValid &&
