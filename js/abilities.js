@@ -1481,3 +1481,24 @@ window.addEventListener(
 
   }
 );
+
+window.addEventListener(
+  'keydown',
+  (event) => {
+
+    if (
+      event.key === '3'
+    ) {
+
+      console.log('Óthisi rotation:', {
+        x: THREE.MathUtils.radToDeg(controllerRotation.x),
+        y: THREE.MathUtils.radToDeg(controllerRotation.y),
+        z: THREE.MathUtils.radToDeg(controllerRotation.z)
+      }
+      
+      );
+
+    }
+
+  }
+);
