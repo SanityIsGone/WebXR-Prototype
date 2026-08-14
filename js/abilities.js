@@ -278,7 +278,8 @@ const CASTING_CONFIG = {
   óthisiMinimumTimingMultiplier: 0.1,
 
   // Élxi requires a half-pressed grip while the trigger is held.
-  élxiGripThreshold: 0.4,
+  élxiGripThreshold: 0.5,
+  élxiGripTolerance: 0.15,
 
   // Independent local controller orientation for the initial Élxi pose.
   élxiInitialRotation: {
@@ -954,9 +955,11 @@ function checkÉlxiInitialGesture(
       handSide
     );
 
-  const initialButtonsValid =
+    const initialButtonsValid =
     triggerPressed &&
-    gripValue >= CASTING_CONFIG.élxiGripThreshold;
+    Math.abs(
+      gripValue - CASTING_CONFIG.élxiGripThreshold
+    ) <= CASTING_CONFIG.élxiGripTolerance;
 
   return (
     initialPositionValid &&
@@ -1038,7 +1041,9 @@ function updateÉlxi(
 
   if (
     !triggerPressed ||
-    gripValue < CASTING_CONFIG.élxiGripThreshold
+    Math.abs(
+      gripValue - CASTING_CONFIG.élxiGripThreshold
+    ) > CASTING_CONFIG.élxiGripTolerance
   ) {
     endÉlxi(
       'required input released'
