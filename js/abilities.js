@@ -282,13 +282,6 @@ const CASTING_CONFIG = {
   // Élxi uses the Óthisi pose rotated around the controller's local Z axis.
   élxiInitialRotationZOffset: THREE.MathUtils.degToRad(90),
 
-  // Instructions for Codex: Change Élxi to use this initial rotation during its check.
-  //élxiInitialRotation: {
-  //  x: 0,
-  //  y: -1.4,
-  //  z: -0.3
- // }, 
-
   élxiInitialRotationTolerance: {
     x: 0.15,
     y: 0.15,
