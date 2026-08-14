@@ -264,9 +264,9 @@ const CASTING_CONFIG = {
 
   // Per-axis tolerance, in radians.
   óthisiInitialRotationTolerance: {
-    x: 0.15,
-    y: 0.15,
-    z: 0.15
+    x: 0.25,
+    y: 0.25,
+    z: 0.25
   },
 
   // Maximum time allowed between the initial and final Óthisi gestures.
@@ -289,9 +289,9 @@ const CASTING_CONFIG = {
   },
 
   élxiInitialRotationTolerance: {
-    x: 0.15,
-    y: 0.15,
-    z: 0.15
+    x: 0.25,
+    y: 0.25,
+    z: 0.25
   },
 
   // Sustained force applied toward the casting hand.
