@@ -1490,6 +1490,8 @@ window.addEventListener(
       event.key === '3'
     ) {
 
+      const controller =
+    getCastingController();
       const controllerRotation =
     controller.object3D.rotation;
       console.log('Óthisi rotation:', {
