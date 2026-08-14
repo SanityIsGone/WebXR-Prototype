@@ -2,6 +2,7 @@
 // SPELL CASTING SYSTEM | abilities.js
 // ==================================================
 
+let lastÉlxiCheckResult = null;
 
 // ==================================================
 // GLOBAL CONTROLLER REFERENCES
@@ -954,29 +955,34 @@ function checkÉlxiInitialGesture(
       handSide
     );
 
-  const initialButtonsValid =
+    const initialButtonsValid =
     triggerPressed &&
     gripValue >= CASTING_CONFIG.élxiGripThreshold;
 
+  const checkResult =
+    initialPositionValid &&
+    initialRotationValid &&
+    initialButtonsValid;
+
+  if (checkResult !== lastÉlxiCheckResult) {
     console.log('🧪 Élxi INITIAL CHECK:', {
       leftRight: handRelative.leftRight,
       upDown: handRelative.upDown,
       forwardBack: handRelative.forwardBack,
       distance: handRelative.distance,
-  
+
       initialPositionValid,
       initialRotationValid,
       initialButtonsValid,
-  
+
       triggerPressed,
       gripValue
     });
 
-  return (
-    initialPositionValid &&
-    initialRotationValid &&
-    initialButtonsValid
-  );
+    lastÉlxiCheckResult = checkResult;
+  }
+
+  return checkResult;
 }
 
 
