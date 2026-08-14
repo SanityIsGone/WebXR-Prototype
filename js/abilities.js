@@ -256,9 +256,10 @@ const CASTING_CONFIG = {
 
   // Approximate local controller orientation for the initial Óthisi pose.
   óthisiInitialRotation: {
-    x: 1.25,
-    y: 0.2,
-    z: 1.25,
+    order: 'YXZ',
+    x: 1.06,
+    y: 1.64,
+    z: 2.89
   },
 
   // Per-axis tolerance, in radians.
