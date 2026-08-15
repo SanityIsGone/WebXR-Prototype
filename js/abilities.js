@@ -929,7 +929,7 @@ function checkÉlxiInitialGesture(
       : 1;
 
   const initialPositionValid =
-    handRelative.leftRight * handSide < 0 &&
+    // handRelative.leftRight * handSide < 0 &&
     handRelative.upDown < 0 &&
     handRelative.forwardBack < 0 &&
     handRelative.distance < 0.6;
@@ -1140,12 +1140,9 @@ function checkÓthisiInitialGesture(
 
   const initialPositionValid =
 
-    handRelative.leftRight * handSide < 0 &&
-
+   // handRelative.leftRight * handSide < 0 &&
     handRelative.upDown < 0 &&
-
     handRelative.forwardBack < 0 &&
-
     handRelative.distance < 0.6;
 
 
