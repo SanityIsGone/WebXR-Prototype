@@ -279,7 +279,7 @@ const CASTING_CONFIG = {
 
   // Élxi requires a half-pressed grip while the trigger is held.
   élxiGripThreshold: 0.5,
-  élxiGripTolerance: 0.15,
+  élxiGripTolerance: 0.35,
 
   // Independent local controller orientation for the initial Élxi pose.
   élxiInitialRotation: {
