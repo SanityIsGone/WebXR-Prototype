@@ -1,4 +1,4 @@
-// Use for Three.JS material definitions; then reference individual materials in other file.
+// Use for Three.JS material definitions; then reference individual materials in other files.
 
 // ==================================================
 // WATER MATERIAL TEST
@@ -7,39 +7,21 @@
 const waterMaterial = new THREE.ShaderMaterial({
 
     uniforms: {
-  
       time: {
         value: 0
-      },
-  
-      envMap: {
-        value: waterCubeTexture
       },
   
       waterColor: {
         value: new THREE.Color(0x9ddfea)
       },
   
-      refractionRatio: {
-        value: 0.985
-      },
-  
-      reflectivity: {
-        value: 0.65
-      },
-  
-      fresnelPower: {
-        value: 3.0
+      distortion: {
+        value: 0.08
       },
   
       opacity: {
-        value: 0.72
-      },
-  
-      distortion: {
-        value: 0.08
+        value: 0.78
       }
-  
     },
   
   
@@ -48,15 +30,17 @@ const waterMaterial = new THREE.ShaderMaterial({
       uniform float time;
       uniform float distortion;
   
-      varying vec3 vWorldPosition;
-      varying vec3 vWorldNormal;
+      varying vec3 vNormal;
       varying vec3 vViewDirection;
   
   
-      // Cheap procedural noise
+      // Cheap procedural noise.
       float hash(vec3 p) {
   
-        p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+        p = fract(
+          p * 0.3183099 +
+          vec3(0.1, 0.2, 0.3)
+        );
   
         p *= 17.0;
   
@@ -64,7 +48,6 @@ const waterMaterial = new THREE.ShaderMaterial({
           p.x * p.y * p.z *
           (p.x + p.y + p.z)
         );
-  
       }
   
   
@@ -75,11 +58,9 @@ const waterMaterial = new THREE.ShaderMaterial({
   
         f = f * f * (3.0 - 2.0 * f);
   
-  
         return mix(
   
           mix(
-  
             mix(
               hash(i),
               hash(i + vec3(1.0, 0.0, 0.0)),
@@ -96,7 +77,6 @@ const waterMaterial = new THREE.ShaderMaterial({
           ),
   
           mix(
-  
             mix(
               hash(i + vec3(0.0, 0.0, 1.0)),
               hash(i + vec3(1.0, 0.0, 1.0)),
@@ -114,7 +94,6 @@ const waterMaterial = new THREE.ShaderMaterial({
   
           f.z
         );
-  
       }
   
   
@@ -122,25 +101,19 @@ const waterMaterial = new THREE.ShaderMaterial({
   
         vec3 p = position;
   
+        float n1 = noise(
+          p * 3.0 +
+          vec3(time * 0.25)
+        );
   
-        float n1 =
-          noise(
-            p * 3.0 +
-            vec3(time * 0.25)
-          );
-  
-  
-        float n2 =
-          noise(
-            p * 7.0 -
-            vec3(time * 0.18)
-          );
-  
+        float n2 = noise(
+          p * 7.0 -
+          vec3(time * 0.18)
+        );
   
         float displacement =
-          (n1 * 0.7 + n2 * 0.3 - 0.5)
-          * distortion;
-  
+          (n1 * 0.7 + n2 * 0.3 - 0.5) *
+          distortion;
   
         p += normal * displacement;
   
@@ -150,13 +123,9 @@ const waterMaterial = new THREE.ShaderMaterial({
           vec4(p, 1.0);
   
   
-        vWorldPosition =
-          worldPosition.xyz;
-  
-  
-        vWorldNormal =
+        vNormal =
           normalize(
-            mat3(modelMatrix) *
+            normalMatrix *
             normal
           );
   
@@ -174,31 +143,22 @@ const waterMaterial = new THREE.ShaderMaterial({
           worldPosition;
   
       }
-  
     `,
   
   
     fragmentShader: `
   
-      uniform samplerCube envMap;
-  
       uniform vec3 waterColor;
-  
-      uniform float refractionRatio;
-      uniform float reflectivity;
-      uniform float fresnelPower;
       uniform float opacity;
   
-  
-      varying vec3 vWorldPosition;
-      varying vec3 vWorldNormal;
+      varying vec3 vNormal;
       varying vec3 vViewDirection;
   
   
       void main() {
   
         vec3 N =
-          normalize(vWorldNormal);
+          normalize(vNormal);
   
         vec3 V =
           normalize(vViewDirection);
@@ -209,60 +169,20 @@ const waterMaterial = new THREE.ShaderMaterial({
           pow(
             1.0 -
             max(dot(N, V), 0.0),
-            fresnelPower
+            3.0
           );
   
   
-        // Reflection.
-        vec3 reflectionDirection =
-          reflect(-V, N);
+        // Simple water-like lighting.
+        vec3 base =
+          waterColor * 0.55;
+  
+        vec3 edge =
+          vec3(1.0) * fresnel * 0.8;
   
   
-        vec3 reflection =
-          textureCube(
-            envMap,
-            reflectionDirection
-          ).rgb;
-  
-  
-        // Refraction.
-        vec3 refractionDirection =
-          refract(
-            -V,
-            N,
-            refractionRatio
-          );
-  
-  
-        vec3 refraction =
-          textureCube(
-            envMap,
-            refractionDirection
-          ).rgb;
-  
-  
-        // Fresnel blends refraction into
-        // reflection around the edges.
-        vec3 environment =
-          mix(
-            refraction,
-            reflection,
-            fresnel * reflectivity
-          );
-  
-  
-        // Subtle water coloration.
-        environment =
-          mix(
-            environment,
-            environment * waterColor,
-            0.35
-          );
-  
-  
-        // Slight brightening at the silhouette.
-        environment +=
-          fresnel * 0.12;
+        vec3 finalColor =
+          base + edge;
   
   
         float finalOpacity =
@@ -272,24 +192,29 @@ const waterMaterial = new THREE.ShaderMaterial({
   
         gl_FragColor =
           vec4(
-            environment,
+            finalColor,
             finalOpacity
           );
   
       }
-  
     `,
+  
   
     transparent: true,
   
     depthWrite: false,
   
     side: THREE.DoubleSide
-  
   });
   
+  
+  // ==================================================
+  // TEMPORARY WATER MESH
+  // ==================================================
+  
   const waterGeometry =
-    new THREE.IcosahedronGeometry(0.3, 3);
+    new THREE.IcosahedronGeometry(0.3, 2);
+  
   
   const waterMesh =
     new THREE.Mesh(
@@ -297,12 +222,22 @@ const waterMaterial = new THREE.ShaderMaterial({
       waterMaterial
     );
   
-  waterMesh.position.set(0, 1.5, -1);
   
-  const scene =
-    document.querySelector('a-scene').object3D;
+  waterMesh.position.set(
+    0,
+    1.5,
+    -1
+  );
   
-  scene.add(waterMesh);
+  
+  // Don't call this "scene" because main.js
+  // already has a global variable with that name.
+  
+  document
+    .querySelector('a-scene')
+    .object3D
+    .add(waterMesh);
+  
   
   // ==================================================
   // ANIMATION
@@ -313,7 +248,12 @@ const waterMaterial = new THREE.ShaderMaterial({
     waterMaterial.uniforms.time.value =
       time * 0.001;
   
-    requestAnimationFrame(animateWater);
+    requestAnimationFrame(
+      animateWater
+    );
   }
   
-  requestAnimationFrame(animateWater);
+  
+  requestAnimationFrame(
+    animateWater
+  );
