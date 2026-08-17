@@ -100,11 +100,11 @@ const waterMaterial =
       },
       
       fresnelStrength: {
-        value: 0.10
+        value: 0.12
       },
       
       fresnelPower: {
-        value: 4.5
+        value: 4
       }
 
     },
@@ -240,14 +240,14 @@ const waterMaterial =
 
         float n1 =
           noise(
-            p * 3.5 +
+            p * 5 +
             vec3(time * 0.20)
           );
 
 
         float n2 =
           noise(
-            p * 8.0 -
+            p * 12 -
             vec3(time * 0.13)
           );
 
@@ -452,7 +452,7 @@ const waterMaterial =
         // ------------------------------------------------
 
         vec3 noisePosition =
-          vWorldPosition * 8.0;
+          vWorldPosition * 12.0;
 
 
         float nx =
@@ -563,20 +563,69 @@ vec3 finalColor =
   );
 
 
-// ------------------------------------------------
-// Fresnel
-// ------------------------------------------------
-
-float edge =
-  fresnel *
-  fresnelStrength;
-
-
-// Very restrained edge highlight.
-
-finalColor +=
-  vec3(0.85, 0.95, 1.0) *
-  edge;
+  // ------------------------------------------------
+  // Surface highlight
+  // ------------------------------------------------
+  
+  vec3 N =
+    normalize(vWorldNormal);
+  
+  vec3 V =
+    normalize(
+      cameraPosition -
+      vWorldPosition
+    );
+  
+  
+  float facing =
+    max(
+      dot(N, V),
+      0.0
+    );
+  
+  
+  float fresnel =
+    pow(
+      1.0 - facing,
+      fresnelPower
+    );
+  
+  
+  // Small-scale variation keeps the highlight
+  // from forming one uniform ring.
+  
+  float highlightNoise =
+    noise(
+      vWorldPosition * 14.0 +
+      vec3(time * 0.08)
+    );
+  
+  
+  highlightNoise =
+    smoothstep(
+      0.42,
+      0.72,
+      highlightNoise
+    );
+  
+  
+  // Combine the two.
+  
+  float highlight =
+    fresnel *
+    highlightNoise *
+    fresnelStrength;
+  
+  
+  // Soft cool-white highlight.
+  
+  finalColor +=
+    vec3(
+      0.75,
+      0.92,
+      1.0
+    ) *
+    highlight;
 
 
 // ------------------------------------------------
