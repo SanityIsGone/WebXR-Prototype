@@ -7,21 +7,31 @@
 const waterMaterial = new THREE.ShaderMaterial({
 
     uniforms: {
+  
       time: {
         value: 0
       },
   
       waterColor: {
-        value: new THREE.Color(0x9ddfea)
+        value: new THREE.Color(0x8fcbd8)
       },
   
       distortion: {
-        value: 0.08
+        value: 0.045
       },
   
       opacity: {
-        value: 0.78
+        value: 0.62
+      },
+  
+      fresnelStrength: {
+        value: 0.28
+      },
+  
+      fresnelPower: {
+        value: 4.5
       }
+  
     },
   
   
@@ -34,7 +44,6 @@ const waterMaterial = new THREE.ShaderMaterial({
       varying vec3 vViewDirection;
   
   
-      // Cheap procedural noise.
       float hash(vec3 p) {
   
         p = fract(
@@ -101,19 +110,25 @@ const waterMaterial = new THREE.ShaderMaterial({
   
         vec3 p = position;
   
-        float n1 = noise(
-          p * 3.0 +
-          vec3(time * 0.25)
-        );
   
-        float n2 = noise(
-          p * 7.0 -
-          vec3(time * 0.18)
-        );
+        float n1 =
+          noise(
+            p * 3.5 +
+            vec3(time * 0.20)
+          );
+  
+  
+        float n2 =
+          noise(
+            p * 8.0 -
+            vec3(time * 0.13)
+          );
+  
   
         float displacement =
-          (n1 * 0.7 + n2 * 0.3 - 0.5) *
-          distortion;
+          (n1 * 0.75 + n2 * 0.25 - 0.5)
+          * distortion;
+  
   
         p += normal * displacement;
   
@@ -143,13 +158,20 @@ const waterMaterial = new THREE.ShaderMaterial({
           worldPosition;
   
       }
+  
     `,
   
   
     fragmentShader: `
   
       uniform vec3 waterColor;
+  
       uniform float opacity;
+  
+      uniform float fresnelStrength;
+  
+      uniform float fresnelPower;
+  
   
       varying vec3 vNormal;
       varying vec3 vViewDirection;
@@ -164,30 +186,40 @@ const waterMaterial = new THREE.ShaderMaterial({
           normalize(vViewDirection);
   
   
-        // Fresnel effect.
-        float fresnel =
-          pow(
-            1.0 -
-            max(dot(N, V), 0.0),
-            3.0
+        float facing =
+          max(
+            dot(N, V),
+            0.0
           );
   
   
-        // Simple water-like lighting.
-        vec3 base =
-          waterColor * 0.55;
+        float fresnel =
+          pow(
+            1.0 - facing,
+            fresnelPower
+          );
   
-        vec3 edge =
-          vec3(1.0) * fresnel * 0.8;
+  
+        // Keep the Fresnel contribution subtle.
+        float edge =
+          fresnel *
+          fresnelStrength;
+  
+  
+        // Slightly brighter base than the
+        // previous version, but not glowing.
+        vec3 baseColor =
+          waterColor * 0.72;
   
   
         vec3 finalColor =
-          base + edge;
+          baseColor +
+          vec3(edge);
   
   
         float finalOpacity =
           opacity +
-          fresnel * 0.15;
+          edge * 0.12;
   
   
         gl_FragColor =
@@ -197,6 +229,7 @@ const waterMaterial = new THREE.ShaderMaterial({
           );
   
       }
+  
     `,
   
   
@@ -213,7 +246,7 @@ const waterMaterial = new THREE.ShaderMaterial({
   // ==================================================
   
   const waterGeometry =
-    new THREE.IcosahedronGeometry(0.3, 2);
+    new THREE.IcosahedronGeometry(0.3, 3);
   
   
   const waterMesh =
