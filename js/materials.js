@@ -88,28 +88,28 @@ const waterMaterial =
       },
 
       waterColor: {
-        value: new THREE.Color(0x8fcbd8)
-      },
+  value: new THREE.Color(0x7fc9d8)
+},
 
-      opacity: {
-        value: 0.20
-      },
+opacity: {
+  value: 1.0
+},
 
-      refractionStrength: {
-        value: 0.035
-      },
+refractionStrength: {
+  value: 0.055
+},
 
-      normalStrength: {
-        value: 0.08
-      },
+normalStrength: {
+  value: 0.045
+},
 
-      fresnelStrength: {
-        value: 0.12
-      },
+fresnelStrength: {
+  value: 0.08
+},
 
-      fresnelPower: {
-        value: 5.0
-      }
+fresnelPower: {
+  value: 5.5
+}
 
     },
 
@@ -573,9 +573,9 @@ const waterMaterial =
     `,
 
 
-    transparent: true,
+    transparent: false,
 
-    depthWrite: false,
+    depthWrite: true,
 
     side: THREE.FrontSide
 
