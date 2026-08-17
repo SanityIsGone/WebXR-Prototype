@@ -11,8 +11,8 @@
 
 const waterRenderTarget =
   new THREE.WebGLRenderTarget(
-    768,
-    768,
+    512,
+    512,
     {
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
@@ -88,27 +88,27 @@ const waterMaterial =
       },
 
       waterColor: {
-        value: new THREE.Color(0x7fc9d8)
+        value: new THREE.Color(0x8fcbd8)
       },
-      
+
       opacity: {
-        value: 1.0
+        value: 0.20
       },
-      
+
       refractionStrength: {
-        value: 0.055
+        value: 0.035
       },
-      
+
       normalStrength: {
-        value: 0.045
-      },
-      
-      fresnelStrength: {
         value: 0.08
       },
-      
+
+      fresnelStrength: {
+        value: 0.12
+      },
+
       fresnelPower: {
-        value: 5.5
+        value: 5.0
       }
 
     },
@@ -295,8 +295,8 @@ const waterMaterial =
         // ------------------------------------------------
 
         vRefractionCoord =
-        textureMatrix *
-        vec4(position, 1.0);
+          textureMatrix *
+          worldPosition;
 
 
         gl_Position =
@@ -538,75 +538,44 @@ const waterMaterial =
           );
 
 
-          // ------------------------------------------------
-          // Water coloration
-          // ------------------------------------------------
-          
-          // Start mostly with the refracted environment.
-          // Water should distort the world, not paint over it.
-          
-          vec3 finalColor =
-            sceneColor;
-          
-          
-          // ------------------------------------------------
-          // Subtle water absorption/tint
-          // ------------------------------------------------
-          
-          // Slightly bias the color toward the water color,
-          // but retain most of the original scene.
-          
-          float tintAmount =
-            0.10;
-          
-          
-          finalColor =
-            mix(
-              finalColor,
-              mix(
-                finalColor,
-                waterColor,
-                0.35
-              ),
-              tintAmount
-            );
-          
-          
-          // ------------------------------------------------
-          // Fresnel
-          // ------------------------------------------------
-          
-          // Water becomes slightly more reflective toward
-          // grazing angles, but this remains deliberately subtle.
-          
-          float edge =
-            fresnel *
-            fresnelStrength;
-          
-          
-          finalColor +=
-            vec3(1.0) *
-            edge;
-          
-          
-          // ------------------------------------------------
-          // Output
-          // ------------------------------------------------
-          
-          gl_FragColor =
-            vec4(
-              finalColor,
-              1.0
-            );
+        // ------------------------------------------------
+        // Water tint
+        // ------------------------------------------------
+
+        vec3 finalColor =
+          mix(
+            sceneColor,
+            sceneColor * waterColor,
+            0.22
+          );
+
+
+        // Subtle edge highlight.
+        finalColor +=
+          vec3(1.0) *
+          fresnel *
+          fresnelStrength;
+
+
+        float finalOpacity =
+          opacity +
+          fresnel * 0.04;
+
+
+        gl_FragColor =
+          vec4(
+            finalColor,
+            finalOpacity
+          );
 
       }
 
     `,
 
 
-    transparent: false,
+    transparent: true,
 
-    depthWrite: true,
+    depthWrite: false,
 
     side: THREE.FrontSide
 
@@ -650,197 +619,197 @@ document
 
 function updateWaterCamera(camera) {
 
-    // ------------------------------------------------
-    // Update water transform
-    // ------------------------------------------------
-  
-    waterMesh.updateMatrixWorld(true);
-  
-  
-    // ------------------------------------------------
-    // Water plane
-    // ------------------------------------------------
-  
-    waterMesh.matrixWorld.decompose(
-      waterPlanePosition,
-      waterPlaneQuaternion,
-      waterPlaneScale
-    );
-  
-  
-    waterPlaneNormal
-      .set(0, 0, 1)
-      .applyQuaternion(
-        waterPlaneQuaternion
-      )
-      .normalize();
-  
-  
-    // Refractor uses the NEGATED normal so that
-    // geometry on the water side is clipped.
-  
-    waterPlaneNormal.negate();
-  
-  
-    waterPlane.setFromNormalAndCoplanarPoint(
-      waterPlaneNormal,
-      waterPlanePosition
-    );
-  
-  
-    // ------------------------------------------------
-    // Copy the real camera
-    // ------------------------------------------------
-  
-    waterVirtualCamera.matrixWorld.copy(
-      camera.matrixWorld
-    );
-  
-  
+  // ------------------------------------------------
+  // Update water transform
+  // ------------------------------------------------
+
+  waterMesh.updateMatrixWorld(true);
+
+
+  // ------------------------------------------------
+  // Water plane
+  // ------------------------------------------------
+
+  waterMesh.matrixWorld.decompose(
+    waterPlanePosition,
+    waterPlaneQuaternion,
+    waterPlaneScale
+  );
+
+
+  waterPlaneNormal
+    .set(0, 0, 1)
+    .applyQuaternion(
+      waterPlaneQuaternion
+    )
+    .normalize();
+
+
+  // Refractor uses the NEGATED normal so that
+  // geometry on the water side is clipped.
+
+  waterPlaneNormal.negate();
+
+
+  waterPlane.setFromNormalAndCoplanarPoint(
+    waterPlaneNormal,
+    waterPlanePosition
+  );
+
+
+  // ------------------------------------------------
+  // Copy the real camera
+  // ------------------------------------------------
+
+  waterVirtualCamera.matrixWorld.copy(
+    camera.matrixWorld
+  );
+
+
+  waterVirtualCamera.matrixWorldInverse
+    .copy(
+      waterVirtualCamera.matrixWorld
+    )
+    .invert();
+
+
+  waterVirtualCamera.projectionMatrix.copy(
+    camera.projectionMatrix
+  );
+
+
+  waterVirtualCamera.far =
+    camera.far;
+
+
+  // ------------------------------------------------
+  // Convert water plane into camera space
+  // ------------------------------------------------
+
+  const clipPlane =
+    new THREE.Plane();
+
+
+  const clipVector =
+    new THREE.Vector4();
+
+
+  const q =
+    new THREE.Vector4();
+
+
+  clipPlane.copy(
+    waterPlane
+  );
+
+
+  clipPlane.applyMatrix4(
     waterVirtualCamera.matrixWorldInverse
-      .copy(
-        waterVirtualCamera.matrixWorld
-      )
-      .invert();
-  
-  
-    waterVirtualCamera.projectionMatrix.copy(
-      camera.projectionMatrix
+  );
+
+
+  clipVector.set(
+    clipPlane.normal.x,
+    clipPlane.normal.y,
+    clipPlane.normal.z,
+    clipPlane.constant
+  );
+
+
+  // ------------------------------------------------
+  // Oblique projection
+  //
+  // This follows Three.js Refractor.
+  // ------------------------------------------------
+
+  const projectionMatrix =
+    waterVirtualCamera.projectionMatrix;
+
+
+  q.x =
+    (
+      Math.sign(clipVector.x) +
+      projectionMatrix.elements[8]
+    ) /
+    projectionMatrix.elements[0];
+
+
+  q.y =
+    (
+      Math.sign(clipVector.y) +
+      projectionMatrix.elements[9]
+    ) /
+    projectionMatrix.elements[5];
+
+
+  q.z =
+    -1.0;
+
+
+  q.w =
+    (
+      1.0 +
+      projectionMatrix.elements[10]
+    ) /
+    projectionMatrix.elements[14];
+
+
+  clipVector.multiplyScalar(
+    2.0 /
+    clipVector.dot(q)
+  );
+
+
+  projectionMatrix.elements[2] =
+    clipVector.x;
+
+
+  projectionMatrix.elements[6] =
+    clipVector.y;
+
+
+  projectionMatrix.elements[10] =
+    clipVector.z + 1.0;
+
+
+  projectionMatrix.elements[14] =
+    clipVector.w;
+
+
+  // ------------------------------------------------
+  // Texture projection matrix
+  // ------------------------------------------------
+  //
+  // IMPORTANT:
+  // This includes waterMesh.matrixWorld.
+  // ------------------------------------------------
+
+  waterTextureMatrix.set(
+    0.5, 0.0, 0.0, 0.5,
+    0.0, 0.5, 0.0, 0.5,
+    0.0, 0.0, 0.5, 0.5,
+    0.0, 0.0, 0.0, 1.0
+  );
+
+
+  waterTextureMatrix
+    .multiply(
+      waterVirtualCamera.projectionMatrix
     );
-  
-  
-    waterVirtualCamera.far =
-      camera.far;
-  
-  
-    // ------------------------------------------------
-    // Convert water plane into camera space
-    // ------------------------------------------------
-  
-    const clipPlane =
-      new THREE.Plane();
-  
-  
-    const clipVector =
-      new THREE.Vector4();
-  
-  
-    const q =
-      new THREE.Vector4();
-  
-  
-    clipPlane.copy(
-      waterPlane
-    );
-  
-  
-    clipPlane.applyMatrix4(
+
+
+  waterTextureMatrix
+    .multiply(
       waterVirtualCamera.matrixWorldInverse
     );
-  
-  
-    clipVector.set(
-      clipPlane.normal.x,
-      clipPlane.normal.y,
-      clipPlane.normal.z,
-      clipPlane.constant
+
+
+  waterTextureMatrix
+    .multiply(
+      waterMesh.matrixWorld
     );
-  
-  
-    // ------------------------------------------------
-    // Oblique projection
-    //
-    // This follows Three.js Refractor.
-    // ------------------------------------------------
-  
-    const projectionMatrix =
-      waterVirtualCamera.projectionMatrix;
-  
-  
-    q.x =
-      (
-        Math.sign(clipVector.x) +
-        projectionMatrix.elements[8]
-      ) /
-      projectionMatrix.elements[0];
-  
-  
-    q.y =
-      (
-        Math.sign(clipVector.y) +
-        projectionMatrix.elements[9]
-      ) /
-      projectionMatrix.elements[5];
-  
-  
-    q.z =
-      -1.0;
-  
-  
-    q.w =
-      (
-        1.0 +
-        projectionMatrix.elements[10]
-      ) /
-      projectionMatrix.elements[14];
-  
-  
-    clipVector.multiplyScalar(
-      2.0 /
-      clipVector.dot(q)
-    );
-  
-  
-    projectionMatrix.elements[2] =
-      clipVector.x;
-  
-  
-    projectionMatrix.elements[6] =
-      clipVector.y;
-  
-  
-    projectionMatrix.elements[10] =
-      clipVector.z + 1.0;
-  
-  
-    projectionMatrix.elements[14] =
-      clipVector.w;
-  
-  
-    // ------------------------------------------------
-    // Texture projection matrix
-    // ------------------------------------------------
-    //
-    // IMPORTANT:
-    // This includes waterMesh.matrixWorld.
-    // ------------------------------------------------
-  
-    waterTextureMatrix.set(
-      0.5, 0.0, 0.0, 0.5,
-      0.0, 0.5, 0.0, 0.5,
-      0.0, 0.0, 0.5, 0.5,
-      0.0, 0.0, 0.0, 1.0
-    );
-  
-  
-    waterTextureMatrix
-      .multiply(
-        waterVirtualCamera.projectionMatrix
-      );
-  
-  
-    waterTextureMatrix
-      .multiply(
-        waterVirtualCamera.matrixWorldInverse
-      );
-  
-  
-    waterTextureMatrix
-      .multiply(
-        waterMesh.matrixWorld
-      );
-  
-  }
+
+}
 
 
 // ==================================================
@@ -854,33 +823,20 @@ waterMesh.onBeforeRender =
     camera
   ) {
 
+    // Don't capture the water itself.
     waterMesh.visible = false;
 
 
-    const previousTarget =
-      renderer.getRenderTarget();
-
-    const previousXREnabled =
-      renderer.xr.enabled;
-
-    const previousShadowAutoUpdate =
-      renderer.shadowMap.autoUpdate;
-
-
-    // Prevent Three.js from modifying the
-    // virtual camera as an XR camera.
-
-    renderer.xr.enabled = false;
-
-    // Don't recompute shadows for the
-    // secondary water render.
-
-    renderer.shadowMap.autoUpdate = false;
-
+    // Update virtual camera using
+    // the actual camera being rendered.
 
     updateWaterCamera(
       camera
     );
+
+
+    const previousTarget =
+      renderer.getRenderTarget();
 
 
     renderer.setRenderTarget(
@@ -888,23 +844,13 @@ waterMesh.onBeforeRender =
     );
 
 
-    if (!renderer.autoClear) {
-      renderer.clear();
-    }
+    renderer.clear();
 
 
     renderer.render(
       scene,
       waterVirtualCamera
     );
-
-
-    renderer.xr.enabled =
-      previousXREnabled;
-
-
-    renderer.shadowMap.autoUpdate =
-      previousShadowAutoUpdate;
 
 
     renderer.setRenderTarget(
