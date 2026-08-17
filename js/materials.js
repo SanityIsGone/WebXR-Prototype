@@ -501,19 +501,105 @@ const waterMaterial =
             vec2(0.999)
           );
 
-          vec3 sceneColor =
+
+        vec3 sceneColor =
           texture2D(
             tDiffuse,
             refractedUV
           ).rgb;
-        
-        
-        gl_FragColor =
-          vec4(
-            sceneColor,
-            1.0
+
+
+        // ------------------------------------------------
+        // Fresnel
+        // ------------------------------------------------
+
+        vec3 N =
+          normalize(vWorldNormal);
+
+
+        vec3 V =
+          normalize(
+            cameraPosition -
+            vWorldPosition
           );
 
+
+        float facing =
+          max(
+            dot(N, V),
+            0.0
+          );
+
+
+        float fresnel =
+          pow(
+            1.0 - facing,
+            fresnelPower
+          );
+
+
+          // ------------------------------------------------
+          // Water coloration
+          // ------------------------------------------------
+          
+          // Start mostly with the refracted environment.
+          // Water should distort the world, not paint over it.
+          
+          vec3 finalColor =
+            sceneColor;
+          
+          
+          // ------------------------------------------------
+          // Subtle water absorption/tint
+          // ------------------------------------------------
+          
+          // Slightly bias the color toward the water color,
+          // but retain most of the original scene.
+          
+          float tintAmount =
+            0.10;
+          
+          
+          finalColor =
+            mix(
+              finalColor,
+              mix(
+                finalColor,
+                waterColor,
+                0.35
+              ),
+              tintAmount
+            );
+          
+          
+          // ------------------------------------------------
+          // Fresnel
+          // ------------------------------------------------
+          
+          // Water becomes slightly more reflective toward
+          // grazing angles, but this remains deliberately subtle.
+          
+          float edge =
+            fresnel *
+            fresnelStrength;
+          
+          
+          finalColor +=
+            vec3(1.0) *
+            edge;
+          
+          
+          // ------------------------------------------------
+          // Output
+          // ------------------------------------------------
+          
+          gl_FragColor =
+  vec4(
+    0.2,
+    0.8,
+    1.0,
+    1.0
+  );
       }
 
     `,
