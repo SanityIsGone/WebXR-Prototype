@@ -92,7 +92,7 @@ const waterMaterial =
       },
 
       opacity: {
-        value: 0.20
+        value: 1
       },
 
       refractionStrength: {
@@ -573,7 +573,7 @@ const waterMaterial =
     `,
 
 
-    transparent: true,
+    transparent: false,
 
     depthWrite: false,
 
