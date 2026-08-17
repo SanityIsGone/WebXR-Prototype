@@ -317,6 +317,8 @@ float n2 =
 
       uniform vec3 waterColor;
 
+      uniform float opacity;
+
       uniform float refractionStrength;
 
       uniform float normalStrength;
@@ -436,114 +438,216 @@ float n2 =
 
       void main() {
 
+        // ------------------------------------------------
         // Projected scene coordinates
-        // ...
-      
-        // Surface distortion
-        // ...
-      
+        // ------------------------------------------------
+
+        vec2 screenUV =
+          vRefractionCoord.xy /
+          vRefractionCoord.w;
+
+
+        // ------------------------------------------------
+        // Animated surface distortion
+        // ------------------------------------------------
+
+        vec3 noisePosition =
+          vWorldPosition * 12.0;
+
+
+        float nx =
+          noise(
+            noisePosition +
+            vec3(time * 0.20, 0.0, 0.0)
+          );
+
+
+        float ny =
+          noise(
+            noisePosition -
+            vec3(0.0, time * 0.17, 0.0)
+          );
+
+
+        vec2 distortion =
+          vec2(
+            nx - 0.5,
+            ny - 0.5
+          );
+
+
+        distortion *=
+          normalStrength;
+
+
+        // ------------------------------------------------
         // Refracted scene
-        // ...
-      
+        // ------------------------------------------------
+
+        vec2 refractedUV =
+          screenUV +
+          distortion *
+          refractionStrength;
+
+
+        refractedUV =
+          clamp(
+            refractedUV,
+            vec2(0.001),
+            vec2(0.999)
+          );
+
+
         vec3 sceneColor =
           texture2D(
             tDiffuse,
             refractedUV
           ).rgb;
-      
-      
+
+
         // ------------------------------------------------
         // Fresnel
         // ------------------------------------------------
-      
+
         vec3 N =
           normalize(vWorldNormal);
-      
+
+
         vec3 V =
           normalize(
             cameraPosition -
             vWorldPosition
           );
-      
+
+
         float facing =
           max(
             dot(N, V),
             0.0
           );
-      
+
+
         float fresnel =
           pow(
             1.0 - facing,
             fresnelPower
           );
-      
-      
-        // ------------------------------------------------
-        // Water coloration
-        // ------------------------------------------------
-      
-        vec3 waterTint =
-          waterColor;
-      
-        vec3 refractedColor =
-          sceneColor * 1.35;
-      
-        vec3 finalColor =
-          mix(
-            refractedColor,
-            waterTint,
-            0.18
-          );
-      
-      
-        // ------------------------------------------------
-        // Surface highlight
-        // ------------------------------------------------
-      
-        float highlightNoise =
-          noise(
-            vWorldPosition * 14.0 +
-            vec3(time * 0.08)
-          );
-      
-        highlightNoise =
-          smoothstep(
-            0.42,
-            0.72,
-            highlightNoise
-          );
-      
-        float highlight =
-          fresnel *
-          highlightNoise *
-          fresnelStrength;
-      
-        finalColor +=
-          vec3(
-            0.75,
-            0.92,
-            1.0
-          ) *
-          highlight;
-      
-      
-        // ------------------------------------------------
-        // Small brightness floor
-        // ------------------------------------------------
-      
-        finalColor =
-          max(
-            finalColor,
-            waterTint * 0.12
-          );
-      
-      
-        gl_FragColor =
-          vec4(
-            finalColor,
-            1.0
-          );
-      
+
+
+          // ------------------------------------------------
+// Water coloration
+// ------------------------------------------------
+
+// Preserve the refracted environment, but give the
+// water its own visible body color.
+
+vec3 waterTint =
+  waterColor;
+
+
+// Slightly brighten the captured environment.
+// This prevents dark environments from making the
+// water disappear into a black blob.
+
+vec3 refractedColor =
+  sceneColor * 1.35;
+
+
+// Blend a modest amount of cyan into the result.
+
+vec3 finalColor =
+  mix(
+    refractedColor,
+    waterTint,
+    0.18
+  );
+
+
+  // ------------------------------------------------
+  // Surface highlight
+  // ------------------------------------------------
+  
+  vec3 N =
+    normalize(vWorldNormal);
+  
+  vec3 V =
+    normalize(
+      cameraPosition -
+      vWorldPosition
+    );
+  
+  
+  float facing =
+    max(
+      dot(N, V),
+      0.0
+    );
+  
+  
+  float fresnel =
+    pow(
+      1.0 - facing,
+      fresnelPower
+    );
+  
+  
+  // Small-scale variation keeps the highlight
+  // from forming one uniform ring.
+  
+  float highlightNoise =
+    noise(
+      vWorldPosition * 14.0 +
+      vec3(time * 0.08)
+    );
+  
+  
+  highlightNoise =
+    smoothstep(
+      0.42,
+      0.72,
+      highlightNoise
+    );
+  
+  
+  // Combine the two.
+  
+  float highlight =
+    fresnel *
+    highlightNoise *
+    fresnelStrength;
+  
+  
+  // Soft cool-white highlight.
+  
+  finalColor +=
+    vec3(
+      0.75,
+      0.92,
+      1.0
+    ) *
+    highlight;
+
+
+// ------------------------------------------------
+// Small brightness floor
+// ------------------------------------------------
+
+// Keeps the water visibly colored even when the
+// captured environment is extremely dark.
+
+finalColor =
+  max(
+    finalColor,
+    waterTint * 0.12
+  );
+
+
+gl_FragColor =
+  vec4(
+    finalColor,
+    1.0
+  );
+
       }
 
     `,
