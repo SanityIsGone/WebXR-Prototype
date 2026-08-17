@@ -11,8 +11,8 @@
 
 const waterRenderTarget =
   new THREE.WebGLRenderTarget(
-    512,
-    512,
+    768,
+    768,
     {
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
@@ -88,27 +88,27 @@ const waterMaterial =
       },
 
       waterColor: {
-        value: new THREE.Color(0x8fcbd8)
+        value: new THREE.Color(0x7fc9d8)
       },
-
+      
       opacity: {
-        value: 1
+        value: 1.0
       },
-
+      
       refractionStrength: {
-        value: 0.035
+        value: 0.055
       },
-
+      
       normalStrength: {
+        value: 0.045
+      },
+      
+      fresnelStrength: {
         value: 0.08
       },
-
-      fresnelStrength: {
-        value: 0.12
-      },
-
+      
       fresnelPower: {
-        value: 5.0
+        value: 5.5
       }
 
     },
@@ -538,35 +538,66 @@ const waterMaterial =
           );
 
 
-        // ------------------------------------------------
-        // Water tint
-        // ------------------------------------------------
-
-        vec3 finalColor =
-          mix(
-            sceneColor,
-            sceneColor * waterColor,
-            0.22
-          );
-
-
-        // Subtle edge highlight.
-        finalColor +=
-          vec3(1.0) *
-          fresnel *
-          fresnelStrength;
-
-
-        float finalOpacity =
-          opacity +
-          fresnel * 0.04;
-
-
-        gl_FragColor =
-          vec4(
-            finalColor,
-            finalOpacity
-          );
+          // ------------------------------------------------
+          // Water coloration
+          // ------------------------------------------------
+          
+          // Start mostly with the refracted environment.
+          // Water should distort the world, not paint over it.
+          
+          vec3 finalColor =
+            sceneColor;
+          
+          
+          // ------------------------------------------------
+          // Subtle water absorption/tint
+          // ------------------------------------------------
+          
+          // Slightly bias the color toward the water color,
+          // but retain most of the original scene.
+          
+          float tintAmount =
+            0.10;
+          
+          
+          finalColor =
+            mix(
+              finalColor,
+              mix(
+                finalColor,
+                waterColor,
+                0.35
+              ),
+              tintAmount
+            );
+          
+          
+          // ------------------------------------------------
+          // Fresnel
+          // ------------------------------------------------
+          
+          // Water becomes slightly more reflective toward
+          // grazing angles, but this remains deliberately subtle.
+          
+          float edge =
+            fresnel *
+            fresnelStrength;
+          
+          
+          finalColor +=
+            vec3(1.0) *
+            edge;
+          
+          
+          // ------------------------------------------------
+          // Output
+          // ------------------------------------------------
+          
+          gl_FragColor =
+            vec4(
+              finalColor,
+              1.0
+            );
 
       }
 
@@ -575,7 +606,7 @@ const waterMaterial =
 
     transparent: false,
 
-    depthWrite: false,
+    depthWrite: true,
 
     side: THREE.FrontSide
 
