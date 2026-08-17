@@ -617,18 +617,18 @@ document
 // UPDATE REFRACTOR CAMERA
 // ==================================================
 
-function updateWaterCamera(camera) {
-
-  // ------------------------------------------------
-  // Update water transform
-  // ------------------------------------------------
-
-  waterMesh.updateMatrixWorld(true);
-
+function updateWaterCamera(
+  camera
+) {
 
   // ------------------------------------------------
   // Water plane
   // ------------------------------------------------
+
+  waterMesh.updateMatrixWorld(
+    true
+  );
+
 
   waterMesh.matrixWorld.decompose(
     waterPlanePosition,
@@ -645,20 +645,15 @@ function updateWaterCamera(camera) {
     .normalize();
 
 
-  // Refractor uses the NEGATED normal so that
-  // geometry on the water side is clipped.
-
-  waterPlaneNormal.negate();
-
-
+  // The water's local +Z plane.
   waterPlane.setFromNormalAndCoplanarPoint(
-    waterPlaneNormal,
+    waterPlaneNormal.clone().negate(),
     waterPlanePosition
   );
 
 
   // ------------------------------------------------
-  // Copy the real camera
+  // Copy main camera
   // ------------------------------------------------
 
   waterVirtualCamera.matrixWorld.copy(
@@ -678,110 +673,80 @@ function updateWaterCamera(camera) {
   );
 
 
-  waterVirtualCamera.far =
-    camera.far;
-
-
   // ------------------------------------------------
-  // Convert water plane into camera space
+  // Oblique clipping
   // ------------------------------------------------
 
   const clipPlane =
-    new THREE.Plane();
-
-
-  const clipVector =
-    new THREE.Vector4();
-
-
-  const q =
-    new THREE.Vector4();
-
-
-  clipPlane.copy(
-    waterPlane
-  );
-
+    waterPlane.clone();
 
   clipPlane.applyMatrix4(
     waterVirtualCamera.matrixWorldInverse
   );
 
 
-  clipVector.set(
-    clipPlane.normal.x,
-    clipPlane.normal.y,
-    clipPlane.normal.z,
-    clipPlane.constant
+  const clipVector =
+    new THREE.Vector4(
+      clipPlane.normal.x,
+      clipPlane.normal.y,
+      clipPlane.normal.z,
+      clipPlane.constant
+    );
+
+
+  const inverseProjection =
+    waterVirtualCamera
+      .projectionMatrix
+      .clone()
+      .invert();
+
+
+  const clipCorner =
+    new THREE.Vector4(
+      Math.sign(clipVector.x),
+      Math.sign(clipVector.y),
+      1.0,
+      1.0
+    );
+
+
+  clipCorner.applyMatrix4(
+    inverseProjection
   );
 
 
-  // ------------------------------------------------
-  // Oblique projection
-  //
-  // This follows Three.js Refractor.
-  // ------------------------------------------------
-
-  const projectionMatrix =
-    waterVirtualCamera.projectionMatrix;
-
-
-  q.x =
-    (
-      Math.sign(clipVector.x) +
-      projectionMatrix.elements[8]
-    ) /
-    projectionMatrix.elements[0];
-
-
-  q.y =
-    (
-      Math.sign(clipVector.y) +
-      projectionMatrix.elements[9]
-    ) /
-    projectionMatrix.elements[5];
-
-
-  q.z =
-    -1.0;
-
-
-  q.w =
-    (
-      1.0 +
-      projectionMatrix.elements[10]
-    ) /
-    projectionMatrix.elements[14];
+  const scale =
+    2.0 /
+    clipVector.dot(clipCorner);
 
 
   clipVector.multiplyScalar(
-    2.0 /
-    clipVector.dot(q)
+    scale
   );
 
 
-  projectionMatrix.elements[2] =
-    clipVector.x;
+  waterVirtualCamera.projectionMatrix.elements[2] =
+    clipVector.x -
+    waterVirtualCamera.projectionMatrix.elements[3];
 
 
-  projectionMatrix.elements[6] =
-    clipVector.y;
+  waterVirtualCamera.projectionMatrix.elements[6] =
+    clipVector.y -
+    waterVirtualCamera.projectionMatrix.elements[7];
 
 
-  projectionMatrix.elements[10] =
-    clipVector.z + 1.0;
+  waterVirtualCamera.projectionMatrix.elements[10] =
+    clipVector.z -
+    waterVirtualCamera.projectionMatrix.elements[11];
 
 
-  projectionMatrix.elements[14] =
-    clipVector.w;
+  waterVirtualCamera.projectionMatrix.elements[14] =
+    clipVector.w -
+    waterVirtualCamera.projectionMatrix.elements[15];
 
 
   // ------------------------------------------------
   // Texture projection matrix
-  // ------------------------------------------------
-  //
-  // IMPORTANT:
-  // This includes waterMesh.matrixWorld.
   // ------------------------------------------------
 
   waterTextureMatrix.set(
@@ -803,11 +768,6 @@ function updateWaterCamera(camera) {
       waterVirtualCamera.matrixWorldInverse
     );
 
-
-  waterTextureMatrix
-    .multiply(
-      waterMesh.matrixWorld
-    );
 
 }
 
