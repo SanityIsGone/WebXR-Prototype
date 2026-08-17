@@ -294,9 +294,9 @@ const waterMaterial =
         // Refraction projection
         // ------------------------------------------------
 
-vRefractionCoord =
-  textureMatrix *
-  vec4(position, 1.0);
+        vRefractionCoord =
+        textureMatrix *
+        vec4(position, 1.0);
 
 
         gl_Position =
@@ -823,20 +823,33 @@ waterMesh.onBeforeRender =
     camera
   ) {
 
-    // Don't capture the water itself.
     waterMesh.visible = false;
-
-
-    // Update virtual camera using
-    // the actual camera being rendered.
-
-    updateWaterCamera(
-      camera
-    );
 
 
     const previousTarget =
       renderer.getRenderTarget();
+
+    const previousXREnabled =
+      renderer.xr.enabled;
+
+    const previousShadowAutoUpdate =
+      renderer.shadowMap.autoUpdate;
+
+
+    // Prevent Three.js from modifying the
+    // virtual camera as an XR camera.
+
+    renderer.xr.enabled = false;
+
+    // Don't recompute shadows for the
+    // secondary water render.
+
+    renderer.shadowMap.autoUpdate = false;
+
+
+    updateWaterCamera(
+      camera
+    );
 
 
     renderer.setRenderTarget(
@@ -844,13 +857,23 @@ waterMesh.onBeforeRender =
     );
 
 
-    renderer.clear();
+    if (!renderer.autoClear) {
+      renderer.clear();
+    }
 
 
     renderer.render(
       scene,
       waterVirtualCamera
     );
+
+
+    renderer.xr.enabled =
+      previousXREnabled;
+
+
+    renderer.shadowMap.autoUpdate =
+      previousShadowAutoUpdate;
 
 
     renderer.setRenderTarget(
