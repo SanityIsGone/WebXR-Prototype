@@ -100,11 +100,11 @@ const waterMaterial =
       },
       
       fresnelStrength: {
-        value: 0.10
+        value: 0.12
       },
       
       fresnelPower: {
-        value: 4.5
+        value: 4
       }
 
     },
@@ -239,17 +239,17 @@ const waterMaterial =
         // ------------------------------------------------
 
         float n1 =
-          noise(
-            p * 3.5 +
-            vec3(time * 0.20)
-          );
+  noise(
+    p * 5.0 +
+    vec3(time * 0.20)
+  );
 
 
-        float n2 =
-          noise(
-            p * 8.0 -
-            vec3(time * 0.13)
-          );
+float n2 =
+  noise(
+    p * 12.0 -
+    vec3(time * 0.13)
+  );
 
 
         float displacement =
@@ -452,7 +452,7 @@ const waterMaterial =
         // ------------------------------------------------
 
         vec3 noisePosition =
-          vWorldPosition * 8.0;
+          vWorldPosition * 12.0;
 
 
         float nx =
@@ -564,33 +564,44 @@ vec3 finalColor =
 
 
 // ------------------------------------------------
-// Fresnel
+// Surface highlight
 // ------------------------------------------------
 
-float edge =
+// Small-scale variation keeps the highlight
+// from forming one uniform ring.
+
+float highlightNoise =
+  noise(
+    vWorldPosition * 14.0 +
+    vec3(time * 0.08)
+  );
+
+
+highlightNoise =
+  smoothstep(
+    0.42,
+    0.72,
+    highlightNoise
+  );
+
+
+// Combine Fresnel with surface variation.
+
+float highlight =
   fresnel *
+  highlightNoise *
   fresnelStrength;
 
 
-// Very restrained edge highlight.
+// Soft cool-white highlight.
 
 finalColor +=
-  vec3(0.85, 0.95, 1.0) *
-  edge;
-
-
-// ------------------------------------------------
-// Small brightness floor
-// ------------------------------------------------
-
-// Keeps the water visibly colored even when the
-// captured environment is extremely dark.
-
-finalColor =
-  max(
-    finalColor,
-    waterTint * 0.12
-  );
+  vec3(
+    0.75,
+    0.92,
+    1.0
+  ) *
+  highlight;
 
 
 gl_FragColor =
