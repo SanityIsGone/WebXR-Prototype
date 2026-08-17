@@ -295,8 +295,8 @@ const waterMaterial =
         // ------------------------------------------------
 
         vRefractionCoord =
-          textureMatrix *
-          worldPosition;
+        textureMatrix *
+        vec4(position, 1.0);
 
 
         gl_Position =
@@ -617,159 +617,199 @@ document
 // UPDATE REFRACTOR CAMERA
 // ==================================================
 
-function updateWaterCamera(
-  camera
-) {
+function updateWaterCamera(camera) {
 
-  // ------------------------------------------------
-  // Water plane
-  // ------------------------------------------------
-
-  waterMesh.updateMatrixWorld(
-    true
-  );
-
-
-  waterMesh.matrixWorld.decompose(
-    waterPlanePosition,
-    waterPlaneQuaternion,
-    waterPlaneScale
-  );
-
-
-  waterPlaneNormal
-    .set(0, 0, 1)
-    .applyQuaternion(
-      waterPlaneQuaternion
-    )
-    .normalize();
-
-
-  // The water's local +Z plane.
-  waterPlane.setFromNormalAndCoplanarPoint(
-    waterPlaneNormal.clone().negate(),
-    waterPlanePosition
-  );
-
-
-  // ------------------------------------------------
-  // Copy main camera
-  // ------------------------------------------------
-
-  waterVirtualCamera.matrixWorld.copy(
-    camera.matrixWorld
-  );
-
-
-  waterVirtualCamera.matrixWorldInverse
-    .copy(
-      waterVirtualCamera.matrixWorld
-    )
-    .invert();
-
-
-  waterVirtualCamera.projectionMatrix.copy(
-    camera.projectionMatrix
-  );
-
-
-  // ------------------------------------------------
-  // Oblique clipping
-  // ------------------------------------------------
-
-  const clipPlane =
-    waterPlane.clone();
-
-  clipPlane.applyMatrix4(
+    // ------------------------------------------------
+    // Update water transform
+    // ------------------------------------------------
+  
+    waterMesh.updateMatrixWorld(true);
+  
+  
+    // ------------------------------------------------
+    // Water plane
+    // ------------------------------------------------
+  
+    waterMesh.matrixWorld.decompose(
+      waterPlanePosition,
+      waterPlaneQuaternion,
+      waterPlaneScale
+    );
+  
+  
+    waterPlaneNormal
+      .set(0, 0, 1)
+      .applyQuaternion(
+        waterPlaneQuaternion
+      )
+      .normalize();
+  
+  
+    // Refractor uses the NEGATED normal so that
+    // geometry on the water side is clipped.
+  
+    waterPlaneNormal.negate();
+  
+  
+    waterPlane.setFromNormalAndCoplanarPoint(
+      waterPlaneNormal,
+      waterPlanePosition
+    );
+  
+  
+    // ------------------------------------------------
+    // Copy the real camera
+    // ------------------------------------------------
+  
+    waterVirtualCamera.matrixWorld.copy(
+      camera.matrixWorld
+    );
+  
+  
     waterVirtualCamera.matrixWorldInverse
-  );
-
-
-  const clipVector =
-    new THREE.Vector4(
+      .copy(
+        waterVirtualCamera.matrixWorld
+      )
+      .invert();
+  
+  
+    waterVirtualCamera.projectionMatrix.copy(
+      camera.projectionMatrix
+    );
+  
+  
+    waterVirtualCamera.far =
+      camera.far;
+  
+  
+    // ------------------------------------------------
+    // Convert water plane into camera space
+    // ------------------------------------------------
+  
+    const clipPlane =
+      new THREE.Plane();
+  
+  
+    const clipVector =
+      new THREE.Vector4();
+  
+  
+    const q =
+      new THREE.Vector4();
+  
+  
+    clipPlane.copy(
+      waterPlane
+    );
+  
+  
+    clipPlane.applyMatrix4(
+      waterVirtualCamera.matrixWorldInverse
+    );
+  
+  
+    clipVector.set(
       clipPlane.normal.x,
       clipPlane.normal.y,
       clipPlane.normal.z,
       clipPlane.constant
     );
-
-
-  const inverseProjection =
-    waterVirtualCamera
-      .projectionMatrix
-      .clone()
-      .invert();
-
-
-  const clipCorner =
-    new THREE.Vector4(
-      Math.sign(clipVector.x),
-      Math.sign(clipVector.y),
-      1.0,
-      1.0
+  
+  
+    // ------------------------------------------------
+    // Oblique projection
+    //
+    // This follows Three.js Refractor.
+    // ------------------------------------------------
+  
+    const projectionMatrix =
+      waterVirtualCamera.projectionMatrix;
+  
+  
+    q.x =
+      (
+        Math.sign(clipVector.x) +
+        projectionMatrix.elements[8]
+      ) /
+      projectionMatrix.elements[0];
+  
+  
+    q.y =
+      (
+        Math.sign(clipVector.y) +
+        projectionMatrix.elements[9]
+      ) /
+      projectionMatrix.elements[5];
+  
+  
+    q.z =
+      -1.0;
+  
+  
+    q.w =
+      (
+        1.0 +
+        projectionMatrix.elements[10]
+      ) /
+      projectionMatrix.elements[14];
+  
+  
+    clipVector.multiplyScalar(
+      2.0 /
+      clipVector.dot(q)
     );
-
-
-  clipCorner.applyMatrix4(
-    inverseProjection
-  );
-
-
-  const scale =
-    2.0 /
-    clipVector.dot(clipCorner);
-
-
-  clipVector.multiplyScalar(
-    scale
-  );
-
-
-  waterVirtualCamera.projectionMatrix.elements[2] =
-    clipVector.x -
-    waterVirtualCamera.projectionMatrix.elements[3];
-
-
-  waterVirtualCamera.projectionMatrix.elements[6] =
-    clipVector.y -
-    waterVirtualCamera.projectionMatrix.elements[7];
-
-
-  waterVirtualCamera.projectionMatrix.elements[10] =
-    clipVector.z -
-    waterVirtualCamera.projectionMatrix.elements[11];
-
-
-  waterVirtualCamera.projectionMatrix.elements[14] =
-    clipVector.w -
-    waterVirtualCamera.projectionMatrix.elements[15];
-
-
-  // ------------------------------------------------
-  // Texture projection matrix
-  // ------------------------------------------------
-
-  waterTextureMatrix.set(
-    0.5, 0.0, 0.0, 0.5,
-    0.0, 0.5, 0.0, 0.5,
-    0.0, 0.0, 0.5, 0.5,
-    0.0, 0.0, 0.0, 1.0
-  );
-
-
-  waterTextureMatrix
-    .multiply(
-      waterVirtualCamera.projectionMatrix
+  
+  
+    projectionMatrix.elements[2] =
+      clipVector.x;
+  
+  
+    projectionMatrix.elements[6] =
+      clipVector.y;
+  
+  
+    projectionMatrix.elements[10] =
+      clipVector.z + 1.0;
+  
+  
+    projectionMatrix.elements[14] =
+      clipVector.w;
+  
+  
+    // ------------------------------------------------
+    // Texture projection matrix
+    // ------------------------------------------------
+    //
+    // IMPORTANT:
+    // This includes waterMesh.matrixWorld.
+    // ------------------------------------------------
+  
+    waterTextureMatrix.set(
+      0.5, 0.0, 0.0, 0.5,
+      0.0, 0.5, 0.0, 0.5,
+      0.0, 0.0, 0.5, 0.5,
+      0.0, 0.0, 0.0, 1.0
     );
-
-
-  waterTextureMatrix
-    .multiply(
-      waterVirtualCamera.matrixWorldInverse
-    );
-
-
-}
+  
+  
+    waterTextureMatrix
+      .multiply(
+        waterVirtualCamera.projectionMatrix
+      );
+  
+  
+    waterTextureMatrix
+      .multiply(
+        waterVirtualCamera.matrixWorldInverse
+      );
+  
+  
+    waterTextureMatrix
+      .multiply(
+        waterMesh.matrixWorld
+      );
+  
+  }
 
 
 // ==================================================
@@ -783,20 +823,33 @@ waterMesh.onBeforeRender =
     camera
   ) {
 
-    // Don't capture the water itself.
     waterMesh.visible = false;
-
-
-    // Update virtual camera using
-    // the actual camera being rendered.
-
-    updateWaterCamera(
-      camera
-    );
 
 
     const previousTarget =
       renderer.getRenderTarget();
+
+    const previousXREnabled =
+      renderer.xr.enabled;
+
+    const previousShadowAutoUpdate =
+      renderer.shadowMap.autoUpdate;
+
+
+    // Prevent Three.js from modifying the
+    // virtual camera as an XR camera.
+
+    renderer.xr.enabled = false;
+
+    // Don't recompute shadows for the
+    // secondary water render.
+
+    renderer.shadowMap.autoUpdate = false;
+
+
+    updateWaterCamera(
+      camera
+    );
 
 
     renderer.setRenderTarget(
@@ -804,13 +857,23 @@ waterMesh.onBeforeRender =
     );
 
 
-    renderer.clear();
+    if (!renderer.autoClear) {
+      renderer.clear();
+    }
 
 
     renderer.render(
       scene,
       waterVirtualCamera
     );
+
+
+    renderer.xr.enabled =
+      previousXREnabled;
+
+
+    renderer.shadowMap.autoUpdate =
+      previousShadowAutoUpdate;
 
 
     renderer.setRenderTarget(
