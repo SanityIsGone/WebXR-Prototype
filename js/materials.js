@@ -1,22 +1,18 @@
-// Use for Three.JS material definitions; then reference individual materials in other files.
+// Use for Three.JS material definitions; then reference individual
+// materials in other files.
 
 // ==================================================
-// WATER MATERIAL TEST
+// GENERIC WATER MATERIAL / REFRACTION TEST
 // ==================================================
 
-// WATER SETTINGS
-
-const WATER_COLOR =
-  new THREE.Color(0x8fcbd8);
-
-
-// Quarter-resolution render target.
-// This is intentionally low for standalone VR.
+// --------------------------------------------------
+// THREE.JS HELPERS
+// --------------------------------------------------
 
 const waterRenderTarget =
   new THREE.WebGLRenderTarget(
-    Math.floor(window.innerWidth * 0.5),
-    Math.floor(window.innerHeight * 0.5),
+    512,
+    512,
     {
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
@@ -26,16 +22,65 @@ const waterRenderTarget =
     }
   );
 
+const waterVirtualCamera =
+  new THREE.PerspectiveCamera();
+
+waterVirtualCamera.matrixAutoUpdate =
+  false;
+
+
+// Projection matrix used by the water shader.
+
+const waterTextureMatrix =
+  new THREE.Matrix4();
+
+
+// Plane representing the front-facing surface
+// of the water object.
+
+const waterPlane =
+  new THREE.Plane();
+
+
+// Temporary math objects.
+
+const waterPlaneNormal =
+  new THREE.Vector3();
+
+const waterPlanePosition =
+  new THREE.Vector3();
+
+const waterPlaneQuaternion =
+  new THREE.Quaternion();
+
+const waterPlaneScale =
+  new THREE.Vector3();
+
+const waterCameraPosition =
+  new THREE.Vector3();
+
+const waterWorldPosition =
+  new THREE.Vector3();
+
+const waterRotationMatrix =
+  new THREE.Matrix4();
+
+
+// ==================================================
 // WATER MATERIAL
+// ==================================================
 
 const waterMaterial =
   new THREE.ShaderMaterial({
 
     uniforms: {
 
-      // Scene captured behind the water.
-      tScene: {
+      tDiffuse: {
         value: waterRenderTarget.texture
+      },
+
+      textureMatrix: {
+        value: waterTextureMatrix
       },
 
       time: {
@@ -43,7 +88,7 @@ const waterMaterial =
       },
 
       waterColor: {
-        value: WATER_COLOR
+        value: new THREE.Color(0x8fcbd8)
       },
 
       opacity: {
@@ -51,11 +96,11 @@ const waterMaterial =
       },
 
       refractionStrength: {
-        value: 0.045
+        value: 0.035
       },
 
       normalStrength: {
-        value: 0.12
+        value: 0.08
       },
 
       fresnelStrength: {
@@ -63,110 +108,31 @@ const waterMaterial =
       },
 
       fresnelPower: {
-        value: 4.5
+        value: 5.0
       }
 
     },
 
+
+    // ==================================================
     // VERTEX SHADER
+    // ==================================================
 
     vertexShader: `
 
+      uniform mat4 textureMatrix;
       uniform float time;
 
+
+      varying vec4 vRefractionCoord;
 
       varying vec3 vWorldPosition;
       varying vec3 vWorldNormal;
 
 
-      void main() {
-
-        vec3 p = position;
-
-        // Low-frequency displacement
-
-        float wave1 =
-          sin(
-            p.x * 5.0 +
-            time * 0.8
-          ) * 0.008;
-
-
-        float wave2 =
-          sin(
-            p.y * 6.0 -
-            time * 0.65
-          ) * 0.008;
-
-
-        float wave3 =
-          sin(
-            p.z * 7.0 +
-            time * 0.55
-          ) * 0.006;
-
-
-        float displacement =
-          wave1 +
-          wave2 +
-          wave3;
-
-
-        p += normal * displacement;
-
-        // World-space information
-
-        vec4 worldPosition =
-          modelMatrix *
-          vec4(p, 1.0);
-
-
-        vWorldPosition =
-          worldPosition.xyz;
-
-
-        vWorldNormal =
-          normalize(
-            mat3(modelMatrix) *
-            normal
-          );
-
-
-        gl_Position =
-          projectionMatrix *
-          viewMatrix *
-          worldPosition;
-
-      }
-
-    `,
-
-    // FRAGMENT SHADER
-
-    fragmentShader: `
-
-      uniform sampler2D tScene;
-
-      uniform float time;
-
-      uniform vec3 waterColor;
-
-      uniform float opacity;
-
-      uniform float refractionStrength;
-
-      uniform float normalStrength;
-
-      uniform float fresnelStrength;
-
-      uniform float fresnelPower;
-
-
-      varying vec3 vWorldPosition;
-      varying vec3 vWorldNormal;
-
-
+      // ------------------------------------------------
       // Cheap procedural noise
+      // ------------------------------------------------
 
       float hash(vec3 p) {
 
@@ -184,7 +150,6 @@ const waterMaterial =
           p.z *
           (p.x + p.y + p.z)
         );
-
       }
 
 
@@ -195,7 +160,6 @@ const waterMaterial =
 
         vec3 f =
           fract(p);
-
 
         f =
           f * f *
@@ -265,18 +229,231 @@ const waterMaterial =
 
           f.z
         );
-
       }
 
 
       void main() {
 
-        // Surface normal
+        vec3 p =
+          position;
 
-        vec3 N =
-          normalize(vWorldNormal);
 
-        // Animated micro-surface
+        // ------------------------------------------------
+        // Gentle shape displacement
+        // ------------------------------------------------
+
+        float n1 =
+          noise(
+            p * 3.5 +
+            vec3(time * 0.20)
+          );
+
+
+        float n2 =
+          noise(
+            p * 8.0 -
+            vec3(time * 0.13)
+          );
+
+
+        float displacement =
+          (
+            n1 * 0.75 +
+            n2 * 0.25 -
+            0.5
+          ) *
+          0.035;
+
+
+        p +=
+          normal *
+          displacement;
+
+
+        // ------------------------------------------------
+        // World position
+        // ------------------------------------------------
+
+        vec4 worldPosition =
+          modelMatrix *
+          vec4(p, 1.0);
+
+
+        vWorldPosition =
+          worldPosition.xyz;
+
+
+        vWorldNormal =
+          normalize(
+            mat3(modelMatrix) *
+            normal
+          );
+
+
+        // ------------------------------------------------
+        // Refraction projection
+        // ------------------------------------------------
+
+        vRefractionCoord =
+          textureMatrix *
+          worldPosition;
+
+
+        gl_Position =
+          projectionMatrix *
+          viewMatrix *
+          worldPosition;
+
+      }
+
+    `,
+
+
+    // ==================================================
+    // FRAGMENT SHADER
+    // ==================================================
+
+    fragmentShader: `
+
+      uniform sampler2D tDiffuse;
+
+      uniform float time;
+
+      uniform vec3 waterColor;
+
+      uniform float opacity;
+
+      uniform float refractionStrength;
+
+      uniform float normalStrength;
+
+      uniform float fresnelStrength;
+
+      uniform float fresnelPower;
+
+
+      varying vec4 vRefractionCoord;
+
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+
+
+      // ------------------------------------------------
+      // Cheap procedural noise
+      // ------------------------------------------------
+
+      float hash(vec3 p) {
+
+        p =
+          fract(
+            p * 0.3183099 +
+            vec3(0.1, 0.2, 0.3)
+          );
+
+        p *= 17.0;
+
+        return fract(
+          p.x *
+          p.y *
+          p.z *
+          (p.x + p.y + p.z)
+        );
+      }
+
+
+      float noise(vec3 p) {
+
+        vec3 i =
+          floor(p);
+
+        vec3 f =
+          fract(p);
+
+        f =
+          f * f *
+          (3.0 - 2.0 * f);
+
+
+        return mix(
+
+          mix(
+            mix(
+              hash(i),
+              hash(
+                i +
+                vec3(1.0, 0.0, 0.0)
+              ),
+              f.x
+            ),
+
+            mix(
+              hash(
+                i +
+                vec3(0.0, 1.0, 0.0)
+              ),
+
+              hash(
+                i +
+                vec3(1.0, 1.0, 0.0)
+              ),
+
+              f.x
+            ),
+
+            f.y
+          ),
+
+          mix(
+            mix(
+              hash(
+                i +
+                vec3(0.0, 0.0, 1.0)
+              ),
+
+              hash(
+                i +
+                vec3(1.0, 0.0, 1.0)
+              ),
+
+              f.x
+            ),
+
+            mix(
+              hash(
+                i +
+                vec3(0.0, 1.0, 1.0)
+              ),
+
+              hash(
+                i +
+                vec3(1.0, 1.0, 1.0)
+              ),
+
+              f.x
+            ),
+
+            f.y
+          ),
+
+          f.z
+        );
+      }
+
+
+      void main() {
+
+        // ------------------------------------------------
+        // Projected scene coordinates
+        // ------------------------------------------------
+
+        vec2 screenUV =
+          vRefractionCoord.xy /
+          vRefractionCoord.w;
+
+
+        // ------------------------------------------------
+        // Animated surface distortion
+        // ------------------------------------------------
 
         vec3 noisePosition =
           vWorldPosition * 8.0;
@@ -306,16 +483,10 @@ const waterMaterial =
         distortion *=
           normalStrength;
 
-        // Screen coordinates
 
-        vec2 screenUV =
-          gl_FragCoord.xy /
-          vec2(
-            float(${Math.max(1, Math.floor(window.innerWidth * 0.5))}),
-            float(${Math.max(1, Math.floor(window.innerHeight * 0.5))})
-          );
-
-        // Refraction
+        // ------------------------------------------------
+        // Refracted scene
+        // ------------------------------------------------
 
         vec2 refractedUV =
           screenUV +
@@ -333,13 +504,20 @@ const waterMaterial =
 
         vec3 sceneColor =
           texture2D(
-            tScene,
+            tDiffuse,
             refractedUV
           ).rgb;
 
-        // Fresnel
 
-        vec3 viewDirection =
+        // ------------------------------------------------
+        // Fresnel
+        // ------------------------------------------------
+
+        vec3 N =
+          normalize(vWorldNormal);
+
+
+        vec3 V =
           normalize(
             cameraPosition -
             vWorldPosition
@@ -348,7 +526,7 @@ const waterMaterial =
 
         float facing =
           max(
-            dot(N, viewDirection),
+            dot(N, V),
             0.0
           );
 
@@ -360,29 +538,24 @@ const waterMaterial =
           );
 
 
+        // ------------------------------------------------
         // Water tint
+        // ------------------------------------------------
 
-        vec3 tintedScene =
+        vec3 finalColor =
           mix(
             sceneColor,
             sceneColor * waterColor,
             0.22
           );
 
-        // Subtle edge reflection
 
-        vec3 edgeLight =
+        // Subtle edge highlight.
+        finalColor +=
           vec3(1.0) *
           fresnel *
           fresnelStrength;
 
-
-        vec3 finalColor =
-          tintedScene +
-          edgeLight;
-
-
-        // Transparency
 
         float finalOpacity =
           opacity +
@@ -401,12 +574,17 @@ const waterMaterial =
 
 
     transparent: true,
+
     depthWrite: false,
+
     side: THREE.FrontSide
 
   });
 
-// TEMPORARY TEST MESH
+
+// ==================================================
+// TEMPORARY WATER MESH
+// ==================================================
 
 const waterGeometry =
   new THREE.IcosahedronGeometry(
@@ -429,8 +607,6 @@ waterMesh.position.set(
 );
 
 
-// Add the test water to the A-Frame scene.
-
 document
   .querySelector('a-scene')
   .object3D
@@ -438,23 +614,167 @@ document
 
 
 // ==================================================
-// SCENE REFRACTION CAPTURE
+// UPDATE REFRACTOR CAMERA
 // ==================================================
 
-const waterScene =
-  document.querySelector('a-scene')
-  .object3D;
+function updateWaterCamera(
+  camera
+) {
+
+  // ------------------------------------------------
+  // Water plane
+  // ------------------------------------------------
+
+  waterMesh.updateMatrixWorld(
+    true
+  );
 
 
-const waterRenderer =
-  document.querySelector('a-scene')
-  .renderer;
+  waterMesh.matrixWorld.decompose(
+    waterPlanePosition,
+    waterPlaneQuaternion,
+    waterPlaneScale
+  );
 
 
-const waterCamera =
-  document.querySelector('#camera')
-  .getObject3D('camera');
+  waterPlaneNormal
+    .set(0, 0, 1)
+    .applyQuaternion(
+      waterPlaneQuaternion
+    )
+    .normalize();
 
+
+  // The water's local +Z plane.
+  waterPlane.setFromNormalAndCoplanarPoint(
+    waterPlaneNormal.clone().negate(),
+    waterPlanePosition
+  );
+
+
+  // ------------------------------------------------
+  // Copy main camera
+  // ------------------------------------------------
+
+  waterVirtualCamera.matrixWorld.copy(
+    camera.matrixWorld
+  );
+
+
+  waterVirtualCamera.matrixWorldInverse
+    .copy(
+      waterVirtualCamera.matrixWorld
+    )
+    .invert();
+
+
+  waterVirtualCamera.projectionMatrix.copy(
+    camera.projectionMatrix
+  );
+
+
+  // ------------------------------------------------
+  // Oblique clipping
+  // ------------------------------------------------
+
+  const clipPlane =
+    waterPlane.clone();
+
+  clipPlane.applyMatrix4(
+    waterVirtualCamera.matrixWorldInverse
+  );
+
+
+  const clipVector =
+    new THREE.Vector4(
+      clipPlane.normal.x,
+      clipPlane.normal.y,
+      clipPlane.normal.z,
+      clipPlane.constant
+    );
+
+
+  const inverseProjection =
+    waterVirtualCamera
+      .projectionMatrix
+      .clone()
+      .invert();
+
+
+  const clipCorner =
+    new THREE.Vector4(
+      Math.sign(clipVector.x),
+      Math.sign(clipVector.y),
+      1.0,
+      1.0
+    );
+
+
+  clipCorner.applyMatrix4(
+    inverseProjection
+  );
+
+
+  const scale =
+    2.0 /
+    clipVector.dot(clipCorner);
+
+
+  clipVector.multiplyScalar(
+    scale
+  );
+
+
+  waterVirtualCamera.projectionMatrix.elements[2] =
+    clipVector.x -
+    waterVirtualCamera.projectionMatrix.elements[3];
+
+
+  waterVirtualCamera.projectionMatrix.elements[6] =
+    clipVector.y -
+    waterVirtualCamera.projectionMatrix.elements[7];
+
+
+  waterVirtualCamera.projectionMatrix.elements[10] =
+    clipVector.z -
+    waterVirtualCamera.projectionMatrix.elements[11];
+
+
+  waterVirtualCamera.projectionMatrix.elements[14] =
+    clipVector.w -
+    waterVirtualCamera.projectionMatrix.elements[15];
+
+
+  // ------------------------------------------------
+  // Texture projection matrix
+  // ------------------------------------------------
+
+  waterTextureMatrix.set(
+    0.5, 0.0, 0.0, 0.5,
+    0.0, 0.5, 0.0, 0.5,
+    0.0, 0.0, 0.5, 0.5,
+    0.0, 0.0, 0.0, 1.0
+  );
+
+
+  waterTextureMatrix
+    .multiply(
+      waterVirtualCamera.projectionMatrix
+    );
+
+
+  waterTextureMatrix
+    .multiply(
+      waterVirtualCamera.matrixWorldInverse
+    );
+
+
+}
+
+
+// ==================================================
+// CAPTURE THE SCENE
+// ==================================================
 
 waterMesh.onBeforeRender =
   function (
@@ -463,28 +783,36 @@ waterMesh.onBeforeRender =
     camera
   ) {
 
-    // Prevent recursive capture.
+    // Don't capture the water itself.
     waterMesh.visible = false;
 
 
-    // Save current render target.
+    // Update virtual camera using
+    // the actual camera being rendered.
+
+    updateWaterCamera(
+      camera
+    );
+
+
     const previousTarget =
       renderer.getRenderTarget();
 
 
-    // Render the scene into the water refraction texture.
     renderer.setRenderTarget(
       waterRenderTarget
     );
 
 
+    renderer.clear();
+
+
     renderer.render(
       scene,
-      camera
+      waterVirtualCamera
     );
 
 
-    // Restore normal rendering.
     renderer.setRenderTarget(
       previousTarget
     );
@@ -499,13 +827,15 @@ waterMesh.onBeforeRender =
 // ANIMATION
 // ==================================================
 
-function animateWater(time) {
+function animateWater(
+  time
+) {
 
   waterMaterial
     .uniforms
     .time
     .value =
-      time * 0.001;
+      time * 0.003;
 
 
   requestAnimationFrame(
