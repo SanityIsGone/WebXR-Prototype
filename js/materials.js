@@ -530,138 +530,301 @@ const waterMaterial =
 
 
       // ------------------------------------------------
-// SOFT REFRACTION BLUR
-// ------------------------------------------------
-
-float waterBlurRadius =
-  0.006;
-
-float waterDiagonal =
-  waterBlurRadius * 0.7071;
-
-
-// Center — strongest contribution.
-
-vec3 waterBlurColor =
-  texture2D(
-    tDiffuse,
-    waterRefractedUV
-  ).rgb * 0.28;
-
-
-// Cardinal samples.
-
-waterBlurColor +=
-  texture2D(
-    tDiffuse,
-    clamp(
-      waterRefractedUV +
-      vec2(waterBlurRadius, 0.0),
-      vec2(0.001),
-      vec2(0.999)
-    )
-  ).rgb * 0.12;
-
-waterBlurColor +=
-  texture2D(
-    tDiffuse,
-    clamp(
-      waterRefractedUV -
-      vec2(waterBlurRadius, 0.0),
-      vec2(0.001),
-      vec2(0.999)
-    )
-  ).rgb * 0.12;
-
-waterBlurColor +=
-  texture2D(
-    tDiffuse,
-    clamp(
-      waterRefractedUV +
-      vec2(0.0, waterBlurRadius),
-      vec2(0.001),
-      vec2(0.999)
-    )
-  ).rgb * 0.12;
-
-waterBlurColor +=
-  texture2D(
-    tDiffuse,
-    clamp(
-      waterRefractedUV -
-      vec2(0.0, waterBlurRadius),
-      vec2(0.001),
-      vec2(0.999)
-    )
-  ).rgb * 0.12;
-
-
-// Diagonal samples.
-
-waterBlurColor +=
-  texture2D(
-    tDiffuse,
-    clamp(
-      waterRefractedUV +
-      vec2(waterDiagonal, waterDiagonal),
-      vec2(0.001),
-      vec2(0.999)
-    )
-  ).rgb * 0.06;
-
-waterBlurColor +=
-  texture2D(
-    tDiffuse,
-    clamp(
-      waterRefractedUV +
-      vec2(-waterDiagonal, waterDiagonal),
-      vec2(0.001),
-      vec2(0.999)
-    )
-  ).rgb * 0.06;
-
-waterBlurColor +=
-  texture2D(
-    tDiffuse,
-    clamp(
-      waterRefractedUV +
-      vec2(waterDiagonal, -waterDiagonal),
-      vec2(0.001),
-      vec2(0.999)
-    )
-  ).rgb * 0.06;
-
-waterBlurColor +=
-  texture2D(
-    tDiffuse,
-    clamp(
-      waterRefractedUV +
-      vec2(-waterDiagonal, -waterDiagonal),
-      vec2(0.001),
-      vec2(0.999)
-    )
-  ).rgb * 0.06;
-
-
-// Blend with the original sharp refraction.
-
-vec3 waterSharpColor =
-  texture2D(
-    tDiffuse,
-    waterRefractedUV
-  ).rgb;
-
-
-float waterBlurAmount =
-  0.65;
-
-
-vec3 waterSceneColor =
-  mix(
-    waterSharpColor,
-    waterBlurColor,
-    waterBlurAmount
-  );
+      // SMOOTH REFRACTION BLUR
+      // ------------------------------------------------
+      
+      float waterBlurRadius =
+        0.0045;
+      
+      
+      // Center sample.
+      
+      vec3 waterBlurColor =
+        texture2D(
+          tDiffuse,
+          waterRefractedUV
+        ).rgb *
+        0.20;
+      
+      
+      // ------------------------------------------------
+      // Inner ring
+      // ------------------------------------------------
+      
+      vec2 b1 =
+        vec2(
+          waterBlurRadius,
+          0.0
+        );
+      
+      vec2 b2 =
+        vec2(
+          0.7071 * waterBlurRadius,
+          0.7071 * waterBlurRadius
+        );
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV + b1,
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.10;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV - b1,
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.10;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV +
+            vec2(
+              0.0,
+              waterBlurRadius
+            ),
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.10;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV -
+            vec2(
+              0.0,
+              waterBlurRadius
+            ),
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.10;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV + b2,
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.08;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV - b2,
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.08;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV +
+            vec2(
+              b2.x,
+              -b2.y
+            ),
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.08;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV +
+            vec2(
+              -b2.x,
+              b2.y
+            ),
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.08;
+      
+      
+      // ------------------------------------------------
+      // Outer ring
+      // ------------------------------------------------
+      
+      float outerRadius =
+        waterBlurRadius * 2.0;
+      
+      
+      float outerDiagonal =
+        outerRadius * 0.7071;
+      
+      
+      // Cardinal directions.
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV +
+            vec2(
+              outerRadius,
+              0.0
+            ),
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.025;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV -
+            vec2(
+              outerRadius,
+              0.0
+            ),
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.025;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV +
+            vec2(
+              0.0,
+              outerRadius
+            ),
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.025;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV -
+            vec2(
+              0.0,
+              outerRadius
+            ),
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.025;
+      
+      
+      // Outer diagonals.
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV +
+            vec2(
+              outerDiagonal,
+              outerDiagonal
+            ),
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.025;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV +
+            vec2(
+              -outerDiagonal,
+              outerDiagonal
+            ),
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.025;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV +
+            vec2(
+              outerDiagonal,
+              -outerDiagonal
+            ),
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.025;
+      
+      
+      waterBlurColor +=
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV +
+            vec2(
+              -outerDiagonal,
+              -outerDiagonal
+            ),
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb * 0.025;
+      
+      
+      // ------------------------------------------------
+      // Blend sharp and blurred refraction
+      // ------------------------------------------------
+      
+      vec3 waterSharpColor =
+        texture2D(
+          tDiffuse,
+          waterRefractedUV
+        ).rgb;
+      
+      
+      float waterBlurAmount =
+        0.65;
+      
+      
+      vec3 waterSceneColor =
+        mix(
+          waterSharpColor,
+          waterBlurColor,
+          waterBlurAmount
+        );
 
 
     // ------------------------------------------------
