@@ -92,7 +92,7 @@ const waterMaterial =
       },
     
       refractionStrength: {
-        value: 0.055
+        value: 0.085
       },
     
       normalStrength: {
@@ -108,7 +108,7 @@ const waterMaterial =
       },
     
       highlightStrength: {
-        value: 2.0
+        value: 1.0
       },
     
       highlightPower: {
@@ -534,7 +534,7 @@ const waterMaterial =
       // ------------------------------------------------
       
       float waterBlurRadius =
-        0.01;
+        0.02;
       
       
       // Center sample.
