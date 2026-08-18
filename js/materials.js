@@ -113,6 +113,14 @@ const waterMaterial =
     
       highlightPower: {
         value: 32.0
+      },
+
+      reflectionStrength: {
+        value: 0.16
+      },
+      
+      reflectionPower: {
+        value: 3.5
       }
     
     },
@@ -336,6 +344,10 @@ const waterMaterial =
   uniform float highlightStrength;
 
   uniform float highlightPower;
+
+  uniform float reflectionStrength;
+
+  uniform float reflectionPower;
 
 
   varying vec4 vRefractionCoord;
@@ -1040,33 +1052,98 @@ const waterMaterial =
       waterReflectionMask *
       0.18;
 
-
     // ------------------------------------------------
-    // SUBTLE SILHOUETTE
+    // SUBTLE REFLECTION
     // ------------------------------------------------
-
-    float waterSilhouette =
-      1.0 -
-      waterFacing;
-
-
-    waterSilhouette =
-      smoothstep(
-        0.45,
-        0.9,
-        waterSilhouette
-      );
-
-
-    waterFinalColor +=
-      vec3(
-        0.12,
-        0.22,
-        0.25
-      ) *
-      waterSilhouette *
-      0.35;
-
+      
+      // Reflection direction.
+      
+      vec3 waterReflection =
+        reflect(
+          -waterView,
+          waterNormal
+        );
+      
+      // A simple procedural environment approximation.
+      // The goal is a soft sky/light reflection rather
+      // than a literal environment map.
+      
+      float reflectionSky =
+        smoothstep(
+          -0.25,
+          0.75,
+          waterReflection.y
+        );
+      
+      
+      // Broad animated variation prevents the reflection
+      // from looking like a perfectly uniform coating.
+      
+      float reflectionNoise =
+        noise(
+          vWorldPosition * 5.0 +
+          vec3(
+            -time * 0.035,
+            time * 0.025,
+            time * 0.02
+          )
+        );
+      
+      
+      // Make the reflection more visible toward glancing
+      // angles, but keep it much softer than the old Fresnel.
+      
+      float reflectionFacing =
+        abs(
+          dot(
+            waterNormal,
+            waterView
+          )
+        );
+      
+      float waterReflectionMask =
+        pow(
+          1.0 - reflectionFacing,
+          reflectionPower
+        );
+      
+      
+      // Broad blue-white reflected light.
+      
+      vec3 waterReflectionColor =
+        mix(
+          vec3(
+            0.48,
+            0.72,
+            0.82
+          ),
+      
+          vec3(
+            0.85,
+            0.96,
+            1.0
+          ),
+      
+          reflectionSky
+        );
+      
+      
+      // Break it up slightly with the water surface.
+      
+      waterReflectionColor *=
+        mix(
+          0.75,
+          1.05,
+          reflectionNoise
+        );
+      
+      
+      // Add reflection.
+      
+      waterFinalColor +=
+        waterReflectionColor *
+        waterReflectionMask *
+        reflectionStrength;
 
     // ------------------------------------------------
     // Minimum visibility
