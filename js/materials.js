@@ -96,7 +96,7 @@ const waterMaterial =
       },
     
       normalStrength: {
-        value: 0.045
+        value: 0.085
       },
     
       fresnelStrength: {
@@ -475,7 +475,7 @@ const waterMaterial =
     // ------------------------------------------------
 
     vec3 waterNoisePosition =
-      vWorldPosition * 8.0;
+      vWorldPosition * 14.0;
 
 
     float waterNoiseX =
