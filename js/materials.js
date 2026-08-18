@@ -529,11 +529,51 @@ const waterMaterial =
       );
 
 
-    vec3 waterSceneColor =
-      texture2D(
-        tDiffuse,
-        waterRefractedUV
-      ).rgb;
+      // ------------------------------------------------
+      // Soft refracted scene
+      // ------------------------------------------------
+      
+      // Small screen-space blur.
+      // Keep this subtle for standalone VR.
+      
+      vec2 blurAmount =
+        vec2(0.0025);
+      
+      vec3 waterSceneColor =
+        texture2D(
+          tDiffuse,
+          waterRefractedUV
+        ).rgb;
+      
+      waterSceneColor +=
+        texture2D(
+          tDiffuse,
+          waterRefractedUV +
+          vec2( blurAmount.x, 0.0 )
+        ).rgb;
+      
+      waterSceneColor +=
+        texture2D(
+          tDiffuse,
+          waterRefractedUV +
+          vec2(-blurAmount.x, 0.0)
+        ).rgb;
+      
+      waterSceneColor +=
+        texture2D(
+          tDiffuse,
+          waterRefractedUV +
+          vec2(0.0,  blurAmount.y)
+        ).rgb;
+      
+      waterSceneColor +=
+        texture2D(
+          tDiffuse,
+          waterRefractedUV +
+          vec2(0.0, -blurAmount.y)
+        ).rgb;
+      
+      waterSceneColor *= 0.2;
 
 
     // ------------------------------------------------
@@ -579,6 +619,66 @@ const waterMaterial =
         0.75,
         waterFresnel
       );
+
+      // ------------------------------------------------
+      // Soft reflection
+      // ------------------------------------------------
+      
+      // Use the existing refracted scene as a cheap
+      // approximation of the surrounding environment.
+      
+      vec2 reflectionUV =
+        waterScreenUV;
+      
+      // Push the reflection toward the opposite side
+      // of the surface distortion.
+      
+      reflectionUV -=
+        waterDistortion *
+        0.8;
+      
+      reflectionUV =
+        clamp(
+          reflectionUV,
+          vec2(0.001),
+          vec2(0.999)
+        );
+      
+      vec3 waterReflection =
+        texture2D(
+          tDiffuse,
+          reflectionUV
+        ).rgb;
+      
+      
+      // Reflection should primarily appear around
+      // glancing angles.
+      
+      float waterReflectionMask =
+        pow(
+          1.0 - waterFacing,
+          3.0
+        );
+      
+      waterReflectionMask *=
+        0.28;
+      
+      
+      // Slightly cool the reflected light.
+      
+      waterReflection *=
+        vec3(
+          0.82,
+          0.94,
+          1.0
+        );
+      
+      
+      // Add it to the water.
+      
+      waterFinalColor +=
+        waterReflection *
+        waterReflectionMask;
 
 
     // ------------------------------------------------
