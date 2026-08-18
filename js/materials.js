@@ -494,7 +494,7 @@ const waterMaterial =
         waterNoisePosition -
         vec3(
           0.0,
-          time * 0.13,
+          time * 0.20,
           0.0
         )
       );
