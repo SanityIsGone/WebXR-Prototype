@@ -108,11 +108,11 @@ const waterMaterial =
       },
     
       highlightStrength: {
-        value: 0.65
+        value: 1.2
       },
     
       highlightPower: {
-        value: 32.0
+        value: 24.0
       }
     
     },
@@ -970,8 +970,8 @@ const waterMaterial =
 
     waterSpecular *=
       smoothstep(
-        0.45,
-        0.75,
+        0.30,
+        0.70,
         waterHighlightNoise
       );
 
