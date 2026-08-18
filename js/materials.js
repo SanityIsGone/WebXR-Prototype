@@ -633,7 +633,7 @@ const waterMaterial =
           0.11,
           0.13
         ),
-        waterInternalLight * 0.35
+        waterInternalLight * 0.5
       );
 
 
@@ -869,101 +869,6 @@ function updateWaterCamera(camera) {
   
     waterVirtualCamera.far =
       camera.far;
-  
-  
-    // ------------------------------------------------
-    // Convert water plane into camera space
-    // ------------------------------------------------
-  
-    const clipPlane =
-      new THREE.Plane();
-  
-  
-    const clipVector =
-      new THREE.Vector4();
-  
-  
-    const q =
-      new THREE.Vector4();
-  
-  
-    clipPlane.copy(
-      waterPlane
-    );
-  
-  
-    clipPlane.applyMatrix4(
-      waterVirtualCamera.matrixWorldInverse
-    );
-  
-  
-    clipVector.set(
-      clipPlane.normal.x,
-      clipPlane.normal.y,
-      clipPlane.normal.z,
-      clipPlane.constant
-    );
-  
-  
-    // ------------------------------------------------
-    // Oblique projection
-    //
-    // This follows Three.js Refractor.
-    // ------------------------------------------------
-  
-    const projectionMatrix =
-      waterVirtualCamera.projectionMatrix;
-  
-  
-    q.x =
-      (
-        Math.sign(clipVector.x) +
-        projectionMatrix.elements[8]
-      ) /
-      projectionMatrix.elements[0];
-  
-  
-    q.y =
-      (
-        Math.sign(clipVector.y) +
-        projectionMatrix.elements[9]
-      ) /
-      projectionMatrix.elements[5];
-  
-  
-    q.z =
-      -1.0;
-  
-  
-    q.w =
-      (
-        1.0 +
-        projectionMatrix.elements[10]
-      ) /
-      projectionMatrix.elements[14];
-  
-  
-    clipVector.multiplyScalar(
-      2.0 /
-      clipVector.dot(q)
-    );
-  
-  
-    projectionMatrix.elements[2] =
-      clipVector.x;
-  
-  
-    projectionMatrix.elements[6] =
-      clipVector.y;
-  
-  
-    projectionMatrix.elements[10] =
-      clipVector.z + 1.0;
-  
-  
-    projectionMatrix.elements[14] =
-      clipVector.w;
-  
   
     // ------------------------------------------------
     // Texture projection matrix
