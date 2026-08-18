@@ -534,7 +534,7 @@ const waterMaterial =
       // ------------------------------------------------
       
       float waterBlurRadius =
-        0.01;
+        0.03;
       
       
       // Center sample.
