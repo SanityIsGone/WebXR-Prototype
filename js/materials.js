@@ -550,21 +550,34 @@ const waterMaterial =
       // ------------------------------------------------
   
       float waterFacing =
-        max(
-          dot(
-            waterNormal,
-            waterView
-          ),
-          0.0
-        );
-  
-  
-      float waterFresnel =
-        pow(
-          1.0 -
-          waterFacing,
-          fresnelPower
-        );
+  abs(
+    dot(
+      waterNormal,
+      waterView
+    )
+  );
+
+
+// Keep the Fresnel effect concentrated
+// around the silhouette.
+
+float waterFresnel =
+  pow(
+    1.0 - waterFacing,
+    fresnelPower
+  );
+
+
+// Prevent the effect from becoming
+// excessively strong on the back-facing
+// portion of the blob.
+
+waterFresnel =
+  smoothstep(
+    0.0,
+    0.75,
+    waterFresnel
+  );
   
   
       // ------------------------------------------------
