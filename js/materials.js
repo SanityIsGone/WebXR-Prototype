@@ -539,8 +539,8 @@ const waterMaterial =
 
     vec2 waterBlurOffset =
       vec2(
-        0.0035,
-        0.0035
+        0.035,
+        0.035
       );
 
 
