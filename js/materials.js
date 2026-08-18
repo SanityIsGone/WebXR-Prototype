@@ -534,7 +534,7 @@ const waterMaterial =
       // ------------------------------------------------
       
       float waterBlurRadius =
-        0.03;
+        0.01;
       
       
       // Center sample.
@@ -970,8 +970,8 @@ const waterMaterial =
 
     waterSpecular *=
       smoothstep(
-        0.45,
-        0.75,
+        0.9,
+        1.0,
         waterHighlightNoise
       );
 
