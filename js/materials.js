@@ -108,11 +108,11 @@ const waterMaterial =
       },
     
       highlightStrength: {
-        value: 1.2
+        value: 2.0
       },
     
       highlightPower: {
-        value: 24.0
+        value: 20.0
       }
     
     },
