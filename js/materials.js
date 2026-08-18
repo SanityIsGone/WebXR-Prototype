@@ -78,35 +78,43 @@ const waterMaterial =
       tDiffuse: {
         value: waterRenderTarget.texture
       },
-
+    
       textureMatrix: {
         value: waterTextureMatrix
       },
-
+    
       time: {
         value: 0
       },
-
+    
       waterColor: {
         value: new THREE.Color(0x6fc9df)
       },
-      
+    
       refractionStrength: {
         value: 0.055
       },
-      
+    
       normalStrength: {
         value: 0.045
       },
-      
+    
       fresnelStrength: {
         value: 0.1
       },
-      
+    
       fresnelPower: {
         value: 4.5
+      },
+    
+      highlightStrength: {
+        value: 0.65
+      },
+    
+      highlightPower: {
+        value: 32.0
       }
-
+    
     },
 
 
