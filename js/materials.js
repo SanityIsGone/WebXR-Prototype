@@ -529,94 +529,110 @@ const waterMaterial =
       );
 
 
-    // ------------------------------------------------
-    // Soft refraction blur
-    //
-    // Five tiny samples around the refracted point.
-    // This softens the background without making the
-    // entire water blob look blurry.
-    // ------------------------------------------------
-
-    vec2 waterBlurOffset =
-      vec2(
-        3.5,
-        3.5
-      );
-
-
-    vec3 waterSceneCenter =
-      texture2D(
-        tDiffuse,
-        waterRefractedUV
-      ).rgb;
-
-
-    vec3 waterSceneBlurA =
-      texture2D(
-        tDiffuse,
-        clamp(
-          waterRefractedUV +
-          vec2(
-            waterBlurOffset.x,
-            0.0
-          ),
-          vec2(0.001),
-          vec2(0.999)
-        )
-      ).rgb;
-
-
-    vec3 waterSceneBlurB =
-      texture2D(
-        tDiffuse,
-        clamp(
-          waterRefractedUV -
-          vec2(
-            waterBlurOffset.x,
-            0.0
-          ),
-          vec2(0.001),
-          vec2(0.999)
-        )
-      ).rgb;
-
-
-    vec3 waterSceneBlurC =
-      texture2D(
-        tDiffuse,
-        clamp(
-          waterRefractedUV +
-          vec2(
-            0.0,
-            waterBlurOffset.y
-          ),
-          vec2(0.001),
-          vec2(0.999)
-        )
-      ).rgb;
-
-
-    vec3 waterSceneBlurD =
-      texture2D(
-        tDiffuse,
-        clamp(
-          waterRefractedUV -
-          vec2(
-            0.0,
-            waterBlurOffset.y
-          ),
-          vec2(0.001),
-          vec2(0.999)
-        )
-      ).rgb;
-
-
-    vec3 waterSceneColor =
-      waterSceneCenter * 0.40 +
-      waterSceneBlurA * 0.15 +
-      waterSceneBlurB * 0.15 +
-      waterSceneBlurC * 0.15 +
-      waterSceneBlurD * 0.15;
+      // ------------------------------------------------
+      // REFRACTION BLUR
+      // ------------------------------------------------
+      
+      // Blur radius in screen UV space.
+      // Try 0.005 - 0.02 for normal use.
+      float waterBlurRadius = 0.012;
+      
+      vec2 waterBlurX =
+        vec2(
+          waterBlurRadius,
+          0.0
+        );
+      
+      vec2 waterBlurY =
+        vec2(
+          0.0,
+          waterBlurRadius
+        );
+      
+      
+      // Center sample.
+      
+      vec3 waterSharpColor =
+        texture2D(
+          tDiffuse,
+          waterRefractedUV
+        ).rgb;
+      
+      
+      // Four surrounding samples.
+      
+      vec3 waterBlur1 =
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV + waterBlurX,
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb;
+      
+      
+      vec3 waterBlur2 =
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV - waterBlurX,
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb;
+      
+      
+      vec3 waterBlur3 =
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV + waterBlurY,
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb;
+      
+      
+      vec3 waterBlur4 =
+        texture2D(
+          tDiffuse,
+          clamp(
+            waterRefractedUV - waterBlurY,
+            vec2(0.001),
+            vec2(0.999)
+          )
+        ).rgb;
+      
+      
+      // Average the surrounding samples.
+      
+      vec3 waterBlurredColor =
+        (
+          waterBlur1 +
+          waterBlur2 +
+          waterBlur3 +
+          waterBlur4
+        ) *
+        0.25;
+      
+      
+      // ------------------------------------------------
+      // BLUR MIX
+      // ------------------------------------------------
+      
+      // 0.0 = completely sharp
+      // 1.0 = completely blurred
+      
+      float waterBlurAmount = 0.75;
+      
+      
+      vec3 waterSceneColor =
+        mix(
+          waterSharpColor,
+          waterBlurredColor,
+          waterBlurAmount
+        );
 
 
     // ------------------------------------------------
