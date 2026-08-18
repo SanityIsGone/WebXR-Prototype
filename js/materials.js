@@ -312,45 +312,45 @@ const waterMaterial =
     fragmentShader: `
 
     uniform sampler2D tDiffuse;
-
+  
     uniform float time;
-    
+  
     uniform vec3 waterColor;
-    
+  
     uniform float refractionStrength;
-    
+  
     uniform float normalStrength;
-    
+  
     uniform float fresnelStrength;
-    
+  
     uniform float fresnelPower;
-    
+  
     uniform float highlightStrength;
-    
+  
     uniform float highlightPower;
-    
-    
+  
+  
     varying vec4 vRefractionCoord;
-    
+  
     varying vec3 vWorldPosition;
-    
+  
     varying vec3 vWorldNormal;
-    
-    
+  
+  
     // ==================================================
-    // CHEAP PROCEDURAL NOISE
+    // NOISE
     // ==================================================
-    
+  
     float hash(vec3 p) {
-    
+  
       p =
         fract(
           p * 0.3183099 +
           vec3(0.1, 0.2, 0.3)
         );
-    
+  
       p *= 17.0;
-    
+  
       return fract(
         p.x *
         p.y *
@@ -362,240 +362,243 @@ const waterMaterial =
         )
       );
     }
-    
-    
+  
+  
     float noise(vec3 p) {
-    
+  
       vec3 i =
         floor(p);
-    
+  
       vec3 f =
         fract(p);
-    
-    
+  
+  
       f =
         f * f *
         (3.0 - 2.0 * f);
-    
-    
+  
+  
       return mix(
-    
+  
         mix(
           mix(
             hash(i),
-    
+  
             hash(
               i +
               vec3(1.0, 0.0, 0.0)
             ),
-    
+  
             f.x
           ),
-    
+  
           mix(
             hash(
               i +
               vec3(0.0, 1.0, 0.0)
             ),
-    
+  
             hash(
               i +
               vec3(1.0, 1.0, 0.0)
             ),
-    
+  
             f.x
           ),
-    
+  
           f.y
         ),
-    
-    
+  
+  
         mix(
           mix(
             hash(
               i +
               vec3(0.0, 0.0, 1.0)
             ),
-    
+  
             hash(
               i +
               vec3(1.0, 0.0, 1.0)
             ),
-    
+  
             f.x
           ),
-    
+  
           mix(
             hash(
               i +
               vec3(0.0, 1.0, 1.0)
             ),
-    
+  
             hash(
               i +
               vec3(1.0, 1.0, 1.0)
             ),
-    
+  
             f.x
           ),
-    
+  
           f.y
         ),
-    
+  
         f.z
       );
     }
-    
-    
+  
+  
     // ==================================================
     // MAIN
     // ==================================================
-    
+  
     void main() {
-    
-    
-      // ==================================================
-      // PROJECTED SCENE COORDINATES
-      // ==================================================
-    
-      vec2 screenUV =
+  
+      // ------------------------------------------------
+      // Project scene coordinates
+      // ------------------------------------------------
+  
+      vec2 waterScreenUV =
         vRefractionCoord.xy /
         vRefractionCoord.w;
-    
-    
-      // ==================================================
-      // SURFACE DISTORTION
-      // ==================================================
-    
-      vec3 noisePosition =
+  
+  
+      // ------------------------------------------------
+      // Surface distortion
+      // ------------------------------------------------
+  
+      vec3 waterNoisePosition =
         vWorldPosition * 8.0;
-    
-    
-      float nx =
+  
+  
+      float waterNoiseX =
         noise(
-          noisePosition +
+          waterNoisePosition +
           vec3(
             time * 0.20,
             0.0,
             0.0
           )
         );
-    
-    
-      float ny =
+  
+  
+      float waterNoiseY =
         noise(
-          noisePosition -
+          waterNoisePosition -
           vec3(
             0.0,
             time * 0.17,
             0.0
           )
         );
-    
-    
-      vec2 distortion =
+  
+  
+      vec2 waterDistortion =
         vec2(
-          nx - 0.5,
-          ny - 0.5
+          waterNoiseX - 0.5,
+          waterNoiseY - 0.5
         );
-    
-    
-      distortion *=
+  
+  
+      waterDistortion *=
         normalStrength;
-    
-    
-      // ==================================================
-      // REFRACTED SCENE
-      // ==================================================
-    
-      vec2 refractedUV =
-        screenUV +
-        distortion *
+  
+  
+      // ------------------------------------------------
+      // Refraction
+      // ------------------------------------------------
+  
+      vec2 waterRefractedUV =
+        waterScreenUV +
+        waterDistortion *
         refractionStrength;
-    
-    
-      refractedUV =
+  
+  
+      waterRefractedUV =
         clamp(
-          refractedUV,
+          waterRefractedUV,
           vec2(0.001),
           vec2(0.999)
         );
-    
-    
-      vec3 sceneColor =
+  
+  
+      vec3 waterSceneColor =
         texture2D(
           tDiffuse,
-          refractedUV
+          waterRefractedUV
         ).rgb;
-    
-    
-      // ==================================================
-      // VIEW / SURFACE
-      // ==================================================
-    
-      vec3 N =
+  
+  
+      // ------------------------------------------------
+      // Surface / view vectors
+      // ------------------------------------------------
+  
+      vec3 waterNormal =
         normalize(
           vWorldNormal
         );
-    
-    
-      vec3 V =
+  
+  
+      vec3 waterView =
         normalize(
           cameraPosition -
           vWorldPosition
         );
-    
-    
-      // ==================================================
-      // FRESNEL
-      // ==================================================
-    
-      float facing =
+  
+  
+      // ------------------------------------------------
+      // Fresnel
+      // ------------------------------------------------
+  
+      float waterFacing =
         max(
-          dot(N, V),
+          dot(
+            waterNormal,
+            waterView
+          ),
           0.0
         );
-    
-    
-      float fresnel =
+  
+  
+      float waterFresnel =
         pow(
-          1.0 - facing,
+          1.0 -
+          waterFacing,
           fresnelPower
         );
-    
-    
-      // ==================================================
-      // WATER BODY COLOR
-      // ==================================================
-    
-      vec3 refractedColor =
-        sceneColor * 1.35;
-    
-    
-      vec3 finalColor =
+  
+  
+      // ------------------------------------------------
+      // Base water color
+      // ------------------------------------------------
+  
+      vec3 waterRefractedColor =
+        waterSceneColor * 1.35;
+  
+  
+      vec3 waterFinalColor =
         mix(
-          refractedColor,
+          waterRefractedColor,
           waterColor,
           0.18
         );
-    
-    
-      // ==================================================
-      // CURVED SURFACE HIGHLIGHT
-      // ==================================================
-    
-      float highlightNoise =
+  
+  
+      // ------------------------------------------------
+      // Surface highlight
+      // ------------------------------------------------
+  
+      float waterHighlightNoise =
         noise(
           vWorldPosition * 14.0 +
           vec3(
             time * 0.05
           )
         );
-    
-    
-      // Cheap directional light.
-    
-      vec3 lightDirection =
+  
+  
+      // Approximate direction of the main light.
+  
+      vec3 waterLight =
         normalize(
           vec3(
             0.45,
@@ -603,85 +606,86 @@ const waterMaterial =
             0.35
           )
         );
-    
-    
+  
+  
       // Half-vector.
-    
-      vec3 H =
+  
+      vec3 waterHalfVector =
         normalize(
-          lightDirection +
-          V
+          waterLight +
+          waterView
         );
-    
-    
-      float specular =
+  
+  
+      float waterSpecular =
         pow(
           max(
-            dot(N, H),
+            dot(
+              waterNormal,
+              waterHalfVector
+            ),
             0.0
           ),
           highlightPower
         );
-    
-    
-      // Break the highlight up slightly.
-    
-      specular *=
+  
+  
+      waterSpecular *=
         mix(
           0.55,
           1.0,
-          highlightNoise
+          waterHighlightNoise
         );
-    
-    
-      finalColor +=
+  
+  
+      waterFinalColor +=
         vec3(
           0.82,
           0.96,
           1.0
         ) *
-        specular *
+        waterSpecular *
         highlightStrength;
-    
-    
-      // ==================================================
-      // FRESNEL EDGE
-      // ==================================================
-    
-      finalColor +=
+  
+  
+      // ------------------------------------------------
+      // Fresnel highlight
+      // ------------------------------------------------
+  
+      waterFinalColor +=
         vec3(
           0.82,
           0.94,
           1.0
         ) *
-        fresnel *
+        waterFresnel *
         fresnelStrength;
-    
-    
-      // ==================================================
-      // MINIMUM WATER VISIBILITY
-      // ==================================================
-    
-      finalColor =
+  
+  
+      // ------------------------------------------------
+      // Minimum visibility
+      // ------------------------------------------------
+  
+      waterFinalColor =
         max(
-          finalColor,
+          waterFinalColor,
           waterColor * 0.12
         );
-    
-    
-      // ==================================================
-      // OUTPUT
-      // ==================================================
-    
+  
+  
+      // ------------------------------------------------
+      // Output
+      // ------------------------------------------------
+  
       gl_FragColor =
         vec4(
-          finalColor,
+          waterFinalColor,
           1.0
         );
-    
+  
     }
-
-    `,
+  
+  `,
 
 
     transparent: false,
