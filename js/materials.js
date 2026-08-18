@@ -92,11 +92,11 @@ const waterMaterial =
       },
     
       refractionStrength: {
-        value: 0.085
+        value: 0.1
       },
     
       normalStrength: {
-        value: 0.085
+        value: 0.1
       },
     
       fresnelStrength: {
@@ -475,7 +475,7 @@ const waterMaterial =
     // ------------------------------------------------
 
     vec3 waterNoisePosition =
-      vWorldPosition * 14.0;
+      vWorldPosition * 24.0;
 
 
     float waterNoiseX =
@@ -1323,7 +1323,7 @@ function animateWater(
     .uniforms
     .time
     .value =
-      time * 0.005;
+      time * 0.01;
 
 
   requestAnimationFrame(
