@@ -970,8 +970,8 @@ const waterMaterial =
 
     waterSpecular *=
       smoothstep(
-        0.60,
-        1.0,
+        0.45,
+        0.75,
         waterHighlightNoise
       );
 
