@@ -580,20 +580,27 @@ waterFresnel =
   );
   
   
-      // ------------------------------------------------
-      // Base water color
-      // ------------------------------------------------
+  // ------------------------------------------------
+  // Base water color
+  // ------------------------------------------------
   
-      vec3 waterRefractedColor =
-        waterSceneColor * 1.35;
+  // Keep the refracted scene's original brightness.
+  // The water tint is blended toward it rather than
+  // multiplying the scene, which prevents dark areas
+  // from becoming unnaturally dark.
+  
+  vec3 waterFinalColor =
+    mix(
+      waterSceneColor,
+      waterColor,
+      0.16
+    );
   
   
-      vec3 waterFinalColor =
-        mix(
-          waterRefractedColor,
-          waterColor,
-          0.18
-        );
+  // Slightly lift the refracted image so the water
+  // doesn't become visually muddy in dark scenes.
+  
+  waterFinalColor *= 1.08;
   
   
       // ------------------------------------------------
@@ -651,28 +658,28 @@ waterFresnel =
         );
   
   
-      waterFinalColor +=
-        vec3(
-          0.82,
-          0.96,
-          1.0
-        ) *
-        waterSpecular *
-        highlightStrength;
+      // waterFinalColor +=
+      //  vec3(
+      //    0.82,
+      //    0.96,
+      //    1.0
+      //  ) *
+      //  waterSpecular *
+      //  highlightStrength;
   
   
       // ------------------------------------------------
       // Fresnel highlight
       // ------------------------------------------------
   
-      waterFinalColor +=
-        vec3(
-          0.82,
-          0.94,
-          1.0
-        ) *
-        waterFresnel *
-        fresnelStrength;
+      // waterFinalColor +=
+      //  vec3(
+      //    0.82,
+      //    0.94,
+      //    1.0
+      //  ) *
+      //  waterFresnel *
+      //  fresnelStrength;
   
   
       // ------------------------------------------------
@@ -692,7 +699,7 @@ waterFresnel =
   
       gl_FragColor =
         vec4(
-          waterSceneColor,
+          waterFinalColor,
           1.0
         );
   
