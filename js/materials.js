@@ -34,38 +34,6 @@ waterVirtualCamera.matrixAutoUpdate =
 const waterTextureMatrix =
   new THREE.Matrix4();
 
-
-// Plane representing the front-facing surface
-// of the water object.
-
-const waterPlane =
-  new THREE.Plane();
-
-
-// Temporary math objects.
-
-const waterPlaneNormal =
-  new THREE.Vector3();
-
-const waterPlanePosition =
-  new THREE.Vector3();
-
-const waterPlaneQuaternion =
-  new THREE.Quaternion();
-
-const waterPlaneScale =
-  new THREE.Vector3();
-
-const waterCameraPosition =
-  new THREE.Vector3();
-
-const waterWorldPosition =
-  new THREE.Vector3();
-
-const waterRotationMatrix =
-  new THREE.Matrix4();
-
-
 // ==================================================
 // WATER MATERIAL
 // ==================================================
@@ -108,11 +76,11 @@ const waterMaterial =
       },
     
       highlightStrength: {
-        value: 0.65
+        value: 0.85
       },
     
       highlightPower: {
-        value: 32.0
+        value: 40.0
       }
     
     },
