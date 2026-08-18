@@ -692,7 +692,7 @@ waterFresnel =
   
       gl_FragColor =
         vec4(
-          waterFinalColor,
+          waterSceneColor,
           1.0
         );
   
