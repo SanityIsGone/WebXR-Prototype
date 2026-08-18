@@ -494,7 +494,7 @@ const waterMaterial =
         waterNoisePosition -
         vec3(
           0.0,
-          time * 0.17,
+          time * 0.13,
           0.0
         )
       );
@@ -1323,7 +1323,7 @@ function animateWater(
     .uniforms
     .time
     .value =
-      time * 0.01;
+      time * 0.075;
 
 
   requestAnimationFrame(
