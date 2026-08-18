@@ -529,11 +529,94 @@ const waterMaterial =
       );
 
 
-    vec3 waterSceneColor =
+    // ------------------------------------------------
+    // Soft refraction blur
+    //
+    // Five tiny samples around the refracted point.
+    // This softens the background without making the
+    // entire water blob look blurry.
+    // ------------------------------------------------
+
+    vec2 waterBlurOffset =
+      vec2(
+        0.0035,
+        0.0035
+      );
+
+
+    vec3 waterSceneCenter =
       texture2D(
         tDiffuse,
         waterRefractedUV
       ).rgb;
+
+
+    vec3 waterSceneBlurA =
+      texture2D(
+        tDiffuse,
+        clamp(
+          waterRefractedUV +
+          vec2(
+            waterBlurOffset.x,
+            0.0
+          ),
+          vec2(0.001),
+          vec2(0.999)
+        )
+      ).rgb;
+
+
+    vec3 waterSceneBlurB =
+      texture2D(
+        tDiffuse,
+        clamp(
+          waterRefractedUV -
+          vec2(
+            waterBlurOffset.x,
+            0.0
+          ),
+          vec2(0.001),
+          vec2(0.999)
+        )
+      ).rgb;
+
+
+    vec3 waterSceneBlurC =
+      texture2D(
+        tDiffuse,
+        clamp(
+          waterRefractedUV +
+          vec2(
+            0.0,
+            waterBlurOffset.y
+          ),
+          vec2(0.001),
+          vec2(0.999)
+        )
+      ).rgb;
+
+
+    vec3 waterSceneBlurD =
+      texture2D(
+        tDiffuse,
+        clamp(
+          waterRefractedUV -
+          vec2(
+            0.0,
+            waterBlurOffset.y
+          ),
+          vec2(0.001),
+          vec2(0.999)
+        )
+      ).rgb;
+
+
+    vec3 waterSceneColor =
+      waterSceneCenter * 0.40 +
+      waterSceneBlurA * 0.15 +
+      waterSceneBlurB * 0.15 +
+      waterSceneBlurC * 0.15 +
+      waterSceneBlurD * 0.15;
 
 
     // ------------------------------------------------
@@ -568,7 +651,8 @@ const waterMaterial =
 
     float waterFresnel =
       pow(
-        1.0 - waterFacing,
+        1.0 -
+        waterFacing,
         fresnelPower
       );
 
@@ -600,10 +684,6 @@ const waterMaterial =
     // ------------------------------------------------
     // INTERNAL WATER VARIATION
     // ------------------------------------------------
-
-    // Slow, broad variation inside the water.
-    // This gives the blob some depth without making
-    // it look like painted noise.
 
     float waterInternalNoise =
       noise(
@@ -650,8 +730,6 @@ const waterMaterial =
       );
 
 
-    // Approximate main light direction.
-
     vec3 waterLight =
       normalize(
         vec3(
@@ -661,8 +739,6 @@ const waterMaterial =
         )
       );
 
-
-    // Half-vector.
 
     vec3 waterHalfVector =
       normalize(
@@ -684,9 +760,6 @@ const waterMaterial =
       );
 
 
-    // Break up the highlight so it doesn't look
-    // like a smooth plastic sphere.
-
     waterSpecular *=
       smoothstep(
         0.45,
@@ -706,12 +779,63 @@ const waterMaterial =
 
 
     // ------------------------------------------------
-    // SUBTLE SILHOUETTE
+    // OUTER REFLECTION
+    //
+    // This is a fake/environment-independent
+    // reflection. It uses the view angle plus the
+    // existing highlight lighting to create a subtle
+    // glossy reflection around the surface.
     // ------------------------------------------------
 
-    // This is deliberately much weaker than the old
-    // Fresnel highlight. It gives the water a slight
-    // blue edge without recreating the dark crescent.
+    float waterReflection =
+      pow(
+        1.0 -
+        waterFacing,
+        2.5
+      );
+
+
+    waterReflection =
+      smoothstep(
+        0.15,
+        0.85,
+        waterReflection
+      );
+
+
+    // Keep reflection strongest where the surface
+    // highlight is also plausible.
+
+    float waterReflectionMask =
+      mix(
+        0.35,
+        1.0,
+        waterSpecular
+      );
+
+
+    vec3 waterReflectionColor =
+      mix(
+        waterColor,
+        vec3(
+          0.82,
+          0.95,
+          1.0
+        ),
+        0.65
+      );
+
+
+    waterFinalColor +=
+      waterReflectionColor *
+      waterReflection *
+      waterReflectionMask *
+      0.18;
+
+
+    // ------------------------------------------------
+    // SUBTLE SILHOUETTE
+    // ------------------------------------------------
 
     float waterSilhouette =
       1.0 -
@@ -760,7 +884,6 @@ const waterMaterial =
   }
 
 `,
-
 
     transparent: false,
 
