@@ -1323,7 +1323,7 @@ function animateWater(
     .uniforms
     .time
     .value =
-      time * 0.075;
+      time * 0.005;
 
 
   requestAnimationFrame(
