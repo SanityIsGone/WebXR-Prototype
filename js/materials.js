@@ -100,7 +100,7 @@ const waterMaterial =
       },
     
       fresnelStrength: {
-        value: 0.1
+        value: 0.15
       },
     
       fresnelPower: {
