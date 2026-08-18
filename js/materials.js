@@ -240,14 +240,14 @@ const waterMaterial =
 
         float n1 =
           noise(
-            p * 5 +
+            p * 5.0 +
             vec3(time * 0.20)
           );
 
 
         float n2 =
           noise(
-            p * 12 -
+            p * 12.0 -
             vec3(time * 0.13)
           );
 
