@@ -1189,20 +1189,26 @@ function updateWaterCamera(camera) {
     // Copy the real camera
     // ------------------------------------------------
   
-    waterVirtualCamera.matrixWorld.copy(
-      camera.matrixWorld
+    waterVirtualCamera.position.copy(
+      camera.position
     );
-  
-    waterVirtualCamera.matrixWorldInverse
-      .copy(
-        waterVirtualCamera.matrixWorld
-      )
-      .invert();
-  
-  
+    
+    waterVirtualCamera.quaternion.copy(
+      camera.quaternion
+    );
+    
     waterVirtualCamera.projectionMatrix.copy(
       camera.projectionMatrix
     );
+    
+    waterVirtualCamera.updateMatrixWorld(true);
+    
+    waterVirtualCamera.matrixWorldInverse.copy(
+      waterVirtualCamera.matrixWorld
+    ).invert();
+    
+    waterVirtualCamera.far =
+      camera.far;
   
   
     waterVirtualCamera.far =
@@ -1249,17 +1255,14 @@ function updateWaterCamera(camera) {
 // ==================================================
 
 waterMesh.onBeforeRender =
-function (
+function(
   renderer,
   scene,
   camera
 ) {
 
-  if (
-    renderer.xr.isPresenting &&
-    waterLastFrame === renderer.info.render.frame
-  ) {
-    return;
+  if (renderer.xr.isPresenting) {
+    camera = camera.cameras[0];
   }
 
   waterLastFrame =
@@ -1285,10 +1288,6 @@ function (
   renderer.shadowMap.autoUpdate = false;
 
 
-  if (renderer.xr.isPresenting) {
-    return;
-  }
-  
   updateWaterCamera(camera);
 
 
@@ -1301,23 +1300,10 @@ function (
 
   // Hide the real XR camera model while capturing.
   // This prevents the camera itself appearing in the texture.
-  const xrCamera =
-    document.querySelector('[camera]');
-
-  if (xrCamera) {
-    xrCamera.object3D.visible = false;
-  }
-
-
   renderer.render(
     scene,
     waterVirtualCamera
   );
-
-
-  if (xrCamera) {
-    xrCamera.object3D.visible = true;
-  }
 
 
   renderer.setRenderTarget(
@@ -1340,13 +1326,14 @@ function (
 // ANIMATION
 // ==================================================
 
-function animateWater(time) {
+renderer.setAnimationLoop((time) => {
 
   waterMaterial.uniforms.time.value =
     time * 0.0075;
 
-}
+  renderer.render(
+    scene,
+    camera
+  );
 
-renderer.setAnimationLoop(
-  animateWater
-);
+});
