@@ -1293,10 +1293,27 @@ waterMesh.onBeforeRender =
     }
 
 
-    renderer.render(
-      scene,
-      waterVirtualCamera
-    );
+    const xrCamera =
+    document.querySelector('[camera]');
+  
+  if (xrCamera) {
+    xrCamera.object3D.visible = false;
+  }
+  
+  renderer.setRenderTarget(waterRenderTarget);
+  
+  renderer.clear();
+  
+  renderer.render(
+    scene,
+    waterVirtualCamera
+  );
+  
+  if (xrCamera) {
+    xrCamera.object3D.visible = true;
+  }
+  
+  renderer.setRenderTarget(previousTarget);
 
 
     renderer.xr.enabled =
