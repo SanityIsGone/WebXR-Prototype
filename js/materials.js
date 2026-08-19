@@ -65,6 +65,7 @@ const waterWorldPosition =
 const waterRotationMatrix =
   new THREE.Matrix4();
 
+  let waterLastFrame = -1;
 
 // ==================================================
 // WATER MATERIAL
@@ -1253,6 +1254,16 @@ function (
   scene,
   camera
 ) {
+
+  if (
+    renderer.xr.isPresenting &&
+    waterLastFrame === renderer.info.render.frame
+  ) {
+    return;
+  }
+
+  waterLastFrame =
+    renderer.info.render.frame;
 
   // Prevent recursive rendering
   waterMesh.visible = false;
