@@ -1285,6 +1285,10 @@ function (
   renderer.shadowMap.autoUpdate = false;
 
 
+  if (renderer.xr.isPresenting) {
+    return;
+  }
+  
   updateWaterCamera(camera);
 
 
@@ -1336,24 +1340,13 @@ function (
 // ANIMATION
 // ==================================================
 
-function animateWater(
-  time
-) {
+function animateWater(time) {
 
-  waterMaterial
-    .uniforms
-    .time
-    .value =
-      time * 0.0075;
-
-
-  requestAnimationFrame(
-    animateWater
-  );
+  waterMaterial.uniforms.time.value =
+    time * 0.0075;
 
 }
 
-
-requestAnimationFrame(
+renderer.setAnimationLoop(
   animateWater
 );
