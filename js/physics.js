@@ -477,7 +477,7 @@ const Physics = {
 
     createBall() {
       const radius = 0.25;
-      const mass = 5;
+      const mass = 3;
 
       // ==================================================
       // CREATE A-FRAME VISUAL
@@ -503,12 +503,15 @@ const Physics = {
             'radius',
             radius
           );
-
-          this.ballEntity.setAttribute(
-            'color',
-            '#ff0000'
-          );
-
+          
+          const ballMesh =
+            this.ballEntity.getObject3D('mesh');
+          
+          if (ballMesh) {
+            ballMesh.material =
+              waterMaterial;
+          }
+          
           this.ballEntity.setAttribute(
             'position',
             '0 2 -2'
