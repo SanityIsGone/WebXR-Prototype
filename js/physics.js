@@ -504,13 +504,11 @@ const Physics = {
             radius
           );
           
-          const ballMesh =
-            this.ballEntity.getObject3D('mesh');
+          this.ballEntity.setAttribute(
+            'color',
+            '#ff0000'
+          );
           
-          if (ballMesh) {
-            ballMesh.material =
-              waterMaterial;
-          }
           
           this.ballEntity.setAttribute(
             'position',
