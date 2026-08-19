@@ -96,7 +96,7 @@ const waterMaterial =
       },
     
       normalStrength: {
-        value: 0.1
+        value: 0.15
       },
     
       fresnelStrength: {
