@@ -1107,9 +1107,10 @@ const waterMaterial =
 // ==================================================
 
 const waterGeometry =
-  new THREE.IcosahedronGeometry(
+  new THREE.BoxGeometry(
     0.3,
-    4
+    0.3,
+    0.3
   );
 
 
