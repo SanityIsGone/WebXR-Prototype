@@ -269,8 +269,11 @@ const waterMaterial =
           0.035;
 
 
+          vec3 displacementDirection =
+          normalize(position);
+        
         p +=
-          normal *
+          displacementDirection *
           displacement;
 
 
@@ -1110,7 +1113,10 @@ const waterGeometry =
   new THREE.BoxGeometry(
     0.3,
     0.3,
-    0.3
+    0.3,
+    24,
+    24,
+    24
   );
 
 
