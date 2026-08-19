@@ -1189,7 +1189,7 @@ function updateWaterCamera(camera) {
     // ------------------------------------------------
   
     waterVirtualCamera.matrixWorld.copy(
-      camera.parent.matrixWorld
+      camera.matrixWorld
     );
   
     waterVirtualCamera.matrixWorldInverse
@@ -1248,91 +1248,78 @@ function updateWaterCamera(camera) {
 // ==================================================
 
 waterMesh.onBeforeRender =
-  function (
-    renderer,
-    scene,
-    camera
-  ) {
+function (
+  renderer,
+  scene,
+  camera
+) {
 
-    waterMesh.visible = false;
-
-
-    const previousTarget =
-      renderer.getRenderTarget();
-
-    const previousXREnabled =
-      renderer.xr.enabled;
-
-    const previousShadowAutoUpdate =
-      renderer.shadowMap.autoUpdate;
+  // Prevent recursive rendering
+  waterMesh.visible = false;
 
 
-    // Prevent Three.js from modifying the
-    // virtual camera as an XR camera.
+  const previousTarget =
+    renderer.getRenderTarget();
 
-    renderer.xr.enabled = false;
+  const previousXREnabled =
+    renderer.xr.enabled;
 
-    // Don't recompute shadows for the
-    // secondary water render.
-
-    renderer.shadowMap.autoUpdate = false;
-
-
-    updateWaterCamera(
-      camera
-    );
+  const previousShadowAutoUpdate =
+    renderer.shadowMap.autoUpdate;
 
 
-    renderer.setRenderTarget(
-      waterRenderTarget
-    );
+  // Stop XR from modifying this secondary camera
+  renderer.xr.enabled = false;
+
+  renderer.shadowMap.autoUpdate = false;
 
 
-    if (!renderer.autoClear) {
-      renderer.clear();
-    }
+  updateWaterCamera(camera);
 
 
-    const xrCamera =
+  renderer.setRenderTarget(
+    waterRenderTarget
+  );
+
+  renderer.clear();
+
+
+  // Hide the real XR camera model while capturing.
+  // This prevents the camera itself appearing in the texture.
+  const xrCamera =
     document.querySelector('[camera]');
-  
+
   if (xrCamera) {
     xrCamera.object3D.visible = false;
   }
-  
-  renderer.setRenderTarget(waterRenderTarget);
-  
-  renderer.clear();
-  
+
+
   renderer.render(
     scene,
     waterVirtualCamera
   );
-  
+
+
   if (xrCamera) {
     xrCamera.object3D.visible = true;
   }
-  
-  renderer.setRenderTarget(previousTarget);
 
 
-    renderer.xr.enabled =
-      previousXREnabled;
+  renderer.setRenderTarget(
+    previousTarget
+  );
 
 
-    renderer.shadowMap.autoUpdate =
-      previousShadowAutoUpdate;
+  renderer.xr.enabled =
+    previousXREnabled;
+
+  renderer.shadowMap.autoUpdate =
+    previousShadowAutoUpdate;
 
 
-    renderer.setRenderTarget(
-      previousTarget
-    );
+  waterMesh.visible = true;
 
-
-    waterMesh.visible = true;
-
-  };
-
+};
 
 // ==================================================
 // ANIMATION
