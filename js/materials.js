@@ -1189,9 +1189,8 @@ function updateWaterCamera(camera) {
     // ------------------------------------------------
   
     waterVirtualCamera.matrixWorld.copy(
-      camera.matrixWorld
+      camera.parent.matrixWorld
     );
-  
   
     waterVirtualCamera.matrixWorldInverse
       .copy(
