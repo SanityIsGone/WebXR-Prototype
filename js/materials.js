@@ -9,8 +9,9 @@
 // THREE.JS HELPERS
 // --------------------------------------------------
 
-const waterRenderTarget =
-  new THREE.WebGLRenderTarget(
+function createWaterRenderTarget() {
+
+  return new THREE.WebGLRenderTarget(
     768,
     768,
     {
@@ -21,6 +22,16 @@ const waterRenderTarget =
       stencilBuffer: false
     }
   );
+}
+
+
+const waterRenderTarget =
+  createWaterRenderTarget();
+
+const waterEyeRenderTargets = [
+  createWaterRenderTarget(),
+  createWaterRenderTarget()
+];
 
 const waterVirtualCamera =
   new THREE.PerspectiveCamera();
@@ -29,10 +40,33 @@ waterVirtualCamera.matrixAutoUpdate =
   false;
 
 
+const waterEyeVirtualCameras = [
+  new THREE.PerspectiveCamera(),
+  new THREE.PerspectiveCamera()
+];
+
+for (
+  const camera
+  of waterEyeVirtualCameras
+) {
+  camera.matrixAutoUpdate = false;
+}
+
+
 // Projection matrix used by the water shader.
 
 const waterTextureMatrix =
   new THREE.Matrix4();
+
+const waterEyeTextureMatrices = [
+  new THREE.Matrix4(),
+  new THREE.Matrix4()
+];
+
+const waterEyeCameraIds = [
+  null,
+  null
+];
 
 
 // Plane representing the front-facing surface
@@ -1144,7 +1178,11 @@ document
 // UPDATE REFRACTOR CAMERA
 // ==================================================
 
-function updateWaterCamera(camera) {
+function updateWaterCamera(
+  camera,
+  virtualCamera = waterVirtualCamera,
+  textureMatrix = waterTextureMatrix
+) {
 
     // ------------------------------------------------
     // Update water transform
@@ -1188,24 +1226,24 @@ function updateWaterCamera(camera) {
     // Copy the real camera
     // ------------------------------------------------
   
-    waterVirtualCamera.matrixWorld.copy(
+    virtualCamera.matrixWorld.copy(
       camera.matrixWorld
     );
   
   
-    waterVirtualCamera.matrixWorldInverse
+    virtualCamera.matrixWorldInverse
       .copy(
-        waterVirtualCamera.matrixWorld
+        virtualCamera.matrixWorld
       )
       .invert();
   
   
-    waterVirtualCamera.projectionMatrix.copy(
+    virtualCamera.projectionMatrix.copy(
       camera.projectionMatrix
     );
   
   
-    waterVirtualCamera.far =
+    virtualCamera.far =
       camera.far;
   
     // ------------------------------------------------
@@ -1216,7 +1254,7 @@ function updateWaterCamera(camera) {
     // This includes waterMesh.matrixWorld.
     // ------------------------------------------------
   
-    waterTextureMatrix.set(
+    textureMatrix.set(
       0.5, 0.0, 0.0, 0.5,
       0.0, 0.5, 0.0, 0.5,
       0.0, 0.0, 0.5, 0.5,
@@ -1224,19 +1262,19 @@ function updateWaterCamera(camera) {
     );
   
   
-    waterTextureMatrix
+    textureMatrix
       .multiply(
-        waterVirtualCamera.projectionMatrix
+        virtualCamera.projectionMatrix
       );
   
   
-    waterTextureMatrix
+    textureMatrix
       .multiply(
-        waterVirtualCamera.matrixWorldInverse
+        virtualCamera.matrixWorldInverse
       );
   
   
-    waterTextureMatrix
+    textureMatrix
       .multiply(
         waterMesh.matrixWorld
       );
@@ -1248,6 +1286,138 @@ function updateWaterCamera(camera) {
 // CAPTURE THE SCENE
 // ==================================================
 
+function captureWaterScene(
+  renderer,
+  scene,
+  camera,
+  renderTarget,
+  textureMatrix,
+  virtualCamera
+) {
+
+  const previousVisible =
+    waterMesh.visible;
+
+  const previousTarget =
+    renderer.getRenderTarget();
+
+  const previousXREnabled =
+    renderer.xr.enabled;
+
+  const previousShadowAutoUpdate =
+    renderer.shadowMap.autoUpdate;
+
+  waterMesh.visible = false;
+
+  renderer.xr.enabled = false;
+  renderer.shadowMap.autoUpdate = false;
+
+  try {
+    updateWaterCamera(
+      camera,
+      virtualCamera,
+      textureMatrix
+    );
+
+    renderer.setRenderTarget(
+      renderTarget
+    );
+
+    if (!renderer.autoClear) {
+      renderer.clear();
+    }
+
+    renderer.render(
+      scene,
+      virtualCamera
+    );
+  } finally {
+    renderer.setRenderTarget(
+      previousTarget
+    );
+
+    renderer.xr.enabled =
+      previousXREnabled;
+
+    renderer.shadowMap.autoUpdate =
+      previousShadowAutoUpdate;
+
+    waterMesh.visible =
+      previousVisible;
+  }
+}
+
+
+function captureWaterFrame(
+  scene
+) {
+
+  const renderer =
+    scene.renderer;
+
+  const camera =
+    scene.camera;
+
+  if (!renderer || !camera) {
+    return;
+  }
+
+  if (renderer.xr.isPresenting) {
+
+    renderer.xr.updateCamera(
+      camera
+    );
+
+    const xrCamera =
+      renderer.xr.getCamera(
+        camera
+      );
+
+    const eyeCameras =
+      xrCamera.cameras || [];
+
+    for (
+      let i = 0;
+      i < eyeCameras.length && i < 2;
+      i++
+    ) {
+
+      const eyeCamera =
+        eyeCameras[i];
+
+      waterEyeCameraIds[i] =
+        eyeCamera.uuid;
+
+      captureWaterScene(
+        renderer,
+        scene.object3D || scene,
+        eyeCamera,
+        waterEyeRenderTargets[i],
+        waterEyeTextureMatrices[i],
+        waterEyeVirtualCameras[i]
+      );
+    }
+  } else {
+
+    waterEyeCameraIds[0] = null;
+    waterEyeCameraIds[1] = null;
+
+    captureWaterScene(
+      renderer,
+      scene.object3D || scene,
+      camera.object3D || camera,
+      waterRenderTarget,
+      waterTextureMatrix,
+      waterVirtualCamera
+    );
+  }
+}
+
+
+// ==================================================
+// SELECT THE CURRENT EYE'S REFRACTION DATA
+// ==================================================
+
 waterMesh.onBeforeRender =
   function (
     renderer,
@@ -1255,65 +1425,34 @@ waterMesh.onBeforeRender =
     camera
   ) {
 
-    waterMesh.visible = false;
+    if (!renderer.xr.isPresenting) {
 
+      waterMaterial.uniforms.tDiffuse.value =
+        waterRenderTarget.texture;
 
-    const previousTarget =
-      renderer.getRenderTarget();
+      waterMaterial.uniforms.textureMatrix.value =
+        waterTextureMatrix;
 
-    const previousXREnabled =
-      renderer.xr.enabled;
-
-    const previousShadowAutoUpdate =
-      renderer.shadowMap.autoUpdate;
-
-
-    // Prevent Three.js from modifying the
-    // virtual camera as an XR camera.
-
-    renderer.xr.enabled = false;
-
-    // Don't recompute shadows for the
-    // secondary water render.
-
-    renderer.shadowMap.autoUpdate = false;
-
-
-    updateWaterCamera(
-      camera
-    );
-
-
-    renderer.setRenderTarget(
-      waterRenderTarget
-    );
-
-
-    if (!renderer.autoClear) {
-      renderer.clear();
+      return;
     }
 
+    const eyeIndex =
+      waterEyeCameraIds.indexOf(
+        camera.uuid
+      );
 
-    renderer.render(
-      scene,
-      waterVirtualCamera
-    );
+    if (
+      eyeIndex < 0 ||
+      eyeIndex >= waterEyeRenderTargets.length
+    ) {
+      return;
+    }
 
+    waterMaterial.uniforms.tDiffuse.value =
+      waterEyeRenderTargets[eyeIndex].texture;
 
-    renderer.xr.enabled =
-      previousXREnabled;
-
-
-    renderer.shadowMap.autoUpdate =
-      previousShadowAutoUpdate;
-
-
-    renderer.setRenderTarget(
-      previousTarget
-    );
-
-
-    waterMesh.visible = true;
+    waterMaterial.uniforms.textureMatrix.value =
+      waterEyeTextureMatrices[eyeIndex];
 
   };
 
@@ -1322,24 +1461,31 @@ waterMesh.onBeforeRender =
 // ANIMATION
 // ==================================================
 
-function animateWater(
-  time
-) {
+AFRAME.registerComponent(
+  'water-rendering',
+  {
 
-  waterMaterial
-    .uniforms
-    .time
-    .value =
-      time * 0.0075;
+    tick(
+      time
+    ) {
 
+      waterMaterial
+        .uniforms
+        .time
+        .value =
+          time * 0.0075;
 
-  requestAnimationFrame(
-    animateWater
-  );
-
-}
-
-
-requestAnimationFrame(
-  animateWater
+      captureWaterFrame(
+        this.el
+      );
+    }
+  }
 );
+
+
+document
+  .querySelector('a-scene')
+  .setAttribute(
+    'water-rendering',
+    ''
+  );
