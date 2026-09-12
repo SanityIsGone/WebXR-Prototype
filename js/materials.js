@@ -1241,8 +1241,14 @@ function updateWaterCamera(
     virtualCamera.projectionMatrix.copy(
       camera.projectionMatrix
     );
-  
-  
+
+    virtualCamera.projectionMatrixInverse.copy(
+      camera.projectionMatrixInverse
+    );
+
+    virtualCamera.near =
+      camera.near;
+
     virtualCamera.far =
       camera.far;
   
@@ -1307,6 +1313,23 @@ function captureWaterScene(
   const previousShadowAutoUpdate =
     renderer.shadowMap.autoUpdate;
 
+  const previousViewport =
+    new THREE.Vector4();
+
+  const previousScissor =
+    new THREE.Vector4();
+
+  renderer.getViewport(
+    previousViewport
+  );
+
+  renderer.getScissor(
+    previousScissor
+  );
+
+  const previousScissorTest =
+    renderer.getScissorTest();
+
   waterMesh.visible = false;
 
   renderer.xr.enabled = false;
@@ -1323,9 +1346,22 @@ function captureWaterScene(
       renderTarget
     );
 
-    if (!renderer.autoClear) {
-      renderer.clear();
-    }
+    renderer.setViewport(
+      0,
+      0,
+      renderTarget.width,
+      renderTarget.height
+    );
+
+    renderer.setScissorTest(
+      false
+    );
+
+    renderer.clear(
+      true,
+      true,
+      false
+    );
 
     renderer.render(
       scene,
@@ -1334,6 +1370,18 @@ function captureWaterScene(
   } finally {
     renderer.setRenderTarget(
       previousTarget
+    );
+
+    renderer.setViewport(
+      previousViewport
+    );
+
+    renderer.setScissor(
+      previousScissor
+    );
+
+    renderer.setScissorTest(
+      previousScissorTest
     );
 
     renderer.xr.enabled =
@@ -1363,6 +1411,10 @@ function captureWaterFrame(
   }
 
   if (renderer.xr.isPresenting) {
+
+    camera.updateMatrixWorld(
+      true
+    );
 
     renderer.xr.updateCamera(
       camera
