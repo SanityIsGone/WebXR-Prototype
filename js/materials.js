@@ -1,4 +1,4 @@
-import { Refractor } from 'three/addons/objects/Refractor.js';
+const Refractor = window.Refractor;
 
 const THREE = window.THREE;
 
