@@ -36,8 +36,6 @@
 </head>
 <body>
   <a-scene
-    physics-manager
-    casting-system="hand: right"
     vr-mode-ui="enabled: true"
     background="color: #20252b"
     renderer="
@@ -91,11 +89,6 @@
     <a-entity
       id="player"
       position="0 0 0"
-      vr-locomotion
-      desktop-controls="
-        enabled: true;
-        moveSpeed: 3;
-      "
     >
 
       <!-- Desktop / VR Camera -->
@@ -118,14 +111,12 @@
       <a-entity
         id="left-controller"
         oculus-touch-controls="hand: left; model: false;"
-        vr-hand="hand: left"
       ></a-entity>
 
       <!-- Right VR Controller -->
       <a-entity
         id="right-controller"
         oculus-touch-controls="hand: right; model: false;"
-        vr-hand="hand: right"
       ></a-entity>
     </a-entity>
 
@@ -158,6 +149,30 @@
         document.body.appendChild(script);
       });
     }
+
+    const scene = document.querySelector('a-scene');
+    const player = document.querySelector('#player');
+    const leftController = document.querySelector('#left-controller');
+    const rightController = document.querySelector('#right-controller');
+
+    scene.setAttribute('physics-manager', '');
+    scene.setAttribute('casting-system', 'hand: right');
+
+    player.setAttribute('vr-locomotion', '');
+    player.setAttribute(
+      'desktop-controls',
+      'enabled: true; moveSpeed: 3;'
+    );
+
+    leftController.setAttribute(
+      'vr-hand',
+      'hand: left'
+    );
+
+    rightController.setAttribute(
+      'vr-hand',
+      'hand: right'
+    );
   </script>
 
 </body>
