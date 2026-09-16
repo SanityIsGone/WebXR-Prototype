@@ -1,120 +1,25 @@
-// Use for Three.JS material definitions; then reference individual
-// materials in other files.
+import { Refractor } from 'three/addons/objects/Refractor.js';
+
+const THREE = window.THREE;
 
 // ==================================================
 // GENERIC WATER MATERIAL / REFRACTION TEST
 // ==================================================
 
-// --------------------------------------------------
-// THREE.JS HELPERS
-// --------------------------------------------------
-
-function createWaterRenderTarget() {
-
-  return new THREE.WebGLRenderTarget(
-    768,
-    768,
-    {
-      minFilter: THREE.LinearFilter,
-      magFilter: THREE.LinearFilter,
-      format: THREE.RGBAFormat,
-      depthBuffer: true,
-      stencilBuffer: false
-    }
-  );
-}
-
-
-const waterRenderTarget =
-  createWaterRenderTarget();
-
-const waterEyeRenderTargets = [
-  createWaterRenderTarget(),
-  createWaterRenderTarget()
-];
-
-const waterVirtualCamera =
-  new THREE.PerspectiveCamera();
-
-waterVirtualCamera.matrixAutoUpdate =
-  false;
-
-
-const waterEyeVirtualCameras = [
-  new THREE.PerspectiveCamera(),
-  new THREE.PerspectiveCamera()
-];
-
-for (
-  const camera
-  of waterEyeVirtualCameras
-) {
-  camera.matrixAutoUpdate = false;
-}
-
-
-// Projection matrix used by the water shader.
-
-const waterTextureMatrix =
-  new THREE.Matrix4();
-
-const waterEyeTextureMatrices = [
-  new THREE.Matrix4(),
-  new THREE.Matrix4()
-];
-
-const waterEyeCameraIds = [
-  null,
-  null
-];
-
-
-// Plane representing the front-facing surface
-// of the water object.
-
-const waterPlane =
-  new THREE.Plane();
-
-
-// Temporary math objects.
-
-const waterPlaneNormal =
-  new THREE.Vector3();
-
-const waterPlanePosition =
-  new THREE.Vector3();
-
-const waterPlaneQuaternion =
-  new THREE.Quaternion();
-
-const waterPlaneScale =
-  new THREE.Vector3();
-
-const waterCameraPosition =
-  new THREE.Vector3();
-
-const waterWorldPosition =
-  new THREE.Vector3();
-
-const waterRotationMatrix =
-  new THREE.Matrix4();
-
-
 // ==================================================
 // WATER MATERIAL
 // ==================================================
 
-const waterMaterial =
-  new THREE.ShaderMaterial({
+const waterRefractionShader = {
 
     uniforms: {
 
       tDiffuse: {
-        value: waterRenderTarget.texture
+        value: null
       },
     
       textureMatrix: {
-        value: waterTextureMatrix
+        value: null
       },
     
       time: {
@@ -1130,17 +1035,11 @@ const waterMaterial =
 
 `,
 
-    transparent: false,
-
-    depthWrite: true,
-
-    side: THREE.FrontSide
-
-  });
+};
 
 
 // ==================================================
-// TEMPORARY WATER MESH
+// WATER REFRACTOR
 // ==================================================
 
 const waterGeometry =
@@ -1155,10 +1054,28 @@ const waterGeometry =
 
 
 const waterMesh =
-  new THREE.Mesh(
+  new Refractor(
     waterGeometry,
-    waterMaterial
+    {
+      color: 0xffffff,
+      textureWidth: 768,
+      textureHeight: 768,
+      shader: waterRefractionShader
+    }
   );
+
+
+const waterMaterial =
+  waterMesh.material;
+
+waterMaterial.transparent =
+  true;
+
+waterMaterial.depthWrite =
+  true;
+
+waterMaterial.side =
+  THREE.FrontSide;
 
 
 waterMesh.position.set(
@@ -1175,346 +1092,11 @@ document
 
 
 // ==================================================
-// UPDATE REFRACTOR CAMERA
-// ==================================================
-
-function updateWaterCamera(
-  camera,
-  virtualCamera = waterVirtualCamera,
-  textureMatrix = waterTextureMatrix
-) {
-
-    // ------------------------------------------------
-    // Update water transform
-    // ------------------------------------------------
-  
-    waterMesh.updateMatrixWorld(true);
-  
-  
-    // ------------------------------------------------
-    // Water plane
-    // ------------------------------------------------
-  
-    waterMesh.matrixWorld.decompose(
-      waterPlanePosition,
-      waterPlaneQuaternion,
-      waterPlaneScale
-    );
-  
-  
-    waterPlaneNormal
-      .set(0, 0, 1)
-      .applyQuaternion(
-        waterPlaneQuaternion
-      )
-      .normalize();
-  
-  
-    // Refractor uses the NEGATED normal so that
-    // geometry on the water side is clipped.
-  
-    waterPlaneNormal.negate();
-  
-  
-    waterPlane.setFromNormalAndCoplanarPoint(
-      waterPlaneNormal,
-      waterPlanePosition
-    );
-  
-  
-    // ------------------------------------------------
-    // Copy the real camera
-    // ------------------------------------------------
-  
-    virtualCamera.matrixWorld.copy(
-      camera.matrixWorld
-    );
-  
-  
-    virtualCamera.matrixWorldInverse
-      .copy(
-        virtualCamera.matrixWorld
-      )
-      .invert();
-  
-  
-    virtualCamera.projectionMatrix.copy(
-      camera.projectionMatrix
-    );
-
-    virtualCamera.projectionMatrixInverse.copy(
-      camera.projectionMatrixInverse
-    );
-
-    virtualCamera.near =
-      camera.near;
-
-    virtualCamera.far =
-      camera.far;
-  
-    // ------------------------------------------------
-    // Texture projection matrix
-    // ------------------------------------------------
-    //
-    // IMPORTANT:
-    // This includes waterMesh.matrixWorld.
-    // ------------------------------------------------
-  
-    textureMatrix.set(
-      0.5, 0.0, 0.0, 0.5,
-      0.0, 0.5, 0.0, 0.5,
-      0.0, 0.0, 0.5, 0.5,
-      0.0, 0.0, 0.0, 1.0
-    );
-  
-  
-    textureMatrix
-      .multiply(
-        virtualCamera.projectionMatrix
-      );
-  
-  
-    textureMatrix
-      .multiply(
-        virtualCamera.matrixWorldInverse
-      );
-  
-  
-    textureMatrix
-      .multiply(
-        waterMesh.matrixWorld
-      );
-  
-  }
-
-
-// ==================================================
-// CAPTURE THE SCENE
-// ==================================================
-
-function captureWaterScene(
-  renderer,
-  scene,
-  camera,
-  renderTarget,
-  textureMatrix,
-  virtualCamera
-) {
-
-  const previousVisible =
-    waterMesh.visible;
-
-  const previousTarget =
-    renderer.getRenderTarget();
-
-  const previousXREnabled =
-    renderer.xr.enabled;
-
-  const previousShadowAutoUpdate =
-    renderer.shadowMap.autoUpdate;
-
-  const previousViewport =
-    new THREE.Vector4();
-
-  const previousScissor =
-    new THREE.Vector4();
-
-  renderer.getViewport(
-    previousViewport
-  );
-
-  renderer.getScissor(
-    previousScissor
-  );
-
-  const previousScissorTest =
-    renderer.getScissorTest();
-
-  waterMesh.visible = false;
-
-  renderer.xr.enabled = false;
-  renderer.shadowMap.autoUpdate = false;
-
-  try {
-    updateWaterCamera(
-      camera,
-      virtualCamera,
-      textureMatrix
-    );
-
-    renderer.setRenderTarget(
-      renderTarget
-    );
-
-    renderer.setViewport(
-      0,
-      0,
-      renderTarget.width,
-      renderTarget.height
-    );
-
-    renderer.setScissorTest(
-      false
-    );
-
-    renderer.clear(
-      true,
-      true,
-      false
-    );
-
-    renderer.render(
-      scene,
-      virtualCamera
-    );
-  } finally {
-    renderer.setRenderTarget(
-      previousTarget
-    );
-
-    renderer.setViewport(
-      previousViewport
-    );
-
-    renderer.setScissor(
-      previousScissor
-    );
-
-    renderer.setScissorTest(
-      previousScissorTest
-    );
-
-    renderer.xr.enabled =
-      previousXREnabled;
-
-    renderer.shadowMap.autoUpdate =
-      previousShadowAutoUpdate;
-
-    waterMesh.visible =
-      previousVisible;
-  }
-}
-
-
-function captureWaterFrame(
-  scene
-) {
-
-  const renderer =
-    scene.renderer;
-
-  const camera =
-    scene.camera;
-
-  if (!renderer || !camera) {
-    return;
-  }
-
-  if (renderer.xr.isPresenting) {
-
-    camera.updateMatrixWorld(
-      true
-    );
-
-    renderer.xr.updateCamera(
-      camera
-    );
-
-    const xrCamera =
-      renderer.xr.getCamera(
-        camera
-      );
-
-    const eyeCameras =
-      xrCamera.cameras || [];
-
-    for (
-      let i = 0;
-      i < eyeCameras.length && i < 2;
-      i++
-    ) {
-
-      const eyeCamera =
-        eyeCameras[i];
-
-      waterEyeCameraIds[i] =
-        eyeCamera.uuid;
-
-      captureWaterScene(
-        renderer,
-        scene.object3D || scene,
-        eyeCamera,
-        waterEyeRenderTargets[i],
-        waterEyeTextureMatrices[i],
-        waterEyeVirtualCameras[i]
-      );
-    }
-  } else {
-
-    waterEyeCameraIds[0] = null;
-    waterEyeCameraIds[1] = null;
-
-    captureWaterScene(
-      renderer,
-      scene.object3D || scene,
-      camera.object3D || camera,
-      waterRenderTarget,
-      waterTextureMatrix,
-      waterVirtualCamera
-    );
-  }
-}
-
-
-// ==================================================
-// SELECT THE CURRENT EYE'S REFRACTION DATA
-// ==================================================
-
-waterMesh.onBeforeRender =
-  function (
-    renderer,
-    scene,
-    camera
-  ) {
-
-    if (!renderer.xr.isPresenting) {
-
-      waterMaterial.uniforms.tDiffuse.value =
-        waterRenderTarget.texture;
-
-      waterMaterial.uniforms.textureMatrix.value =
-        waterTextureMatrix;
-
-      return;
-    }
-
-    const eyeIndex =
-      waterEyeCameraIds.indexOf(
-        camera.uuid
-      );
-
-    if (
-      eyeIndex < 0 ||
-      eyeIndex >= waterEyeRenderTargets.length
-    ) {
-      return;
-    }
-
-    waterMaterial.uniforms.tDiffuse.value =
-      waterEyeRenderTargets[eyeIndex].texture;
-
-    waterMaterial.uniforms.textureMatrix.value =
-      waterEyeTextureMatrices[eyeIndex];
-
-  };
-
-
-// ==================================================
 // ANIMATION
 // ==================================================
 
 AFRAME.registerComponent(
-  'water-rendering',
+  'water-animation',
   {
 
     tick(
@@ -1527,9 +1109,6 @@ AFRAME.registerComponent(
         .value =
           time * 0.0075;
 
-      captureWaterFrame(
-        this.el
-      );
     }
   }
 );
@@ -1538,6 +1117,6 @@ AFRAME.registerComponent(
 document
   .querySelector('a-scene')
   .setAttribute(
-    'water-rendering',
+    'water-animation',
     ''
   );

@@ -11,8 +11,16 @@
 
   <link rel="stylesheet" href="styles/main.css">
 
-<!-- A-Frame -->
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+<!-- A-Frame and the matching Three.js addon module graph -->
+<script type="importmap">
+  {
+    "imports": {
+      "aframe": "https://aframe.io/releases/1.7.1/aframe.module.min.js",
+      "three": "https://cdn.jsdelivr.net/npm/super-three@0.173.0/build/three.module.min.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/super-three@0.173.0/examples/jsm/"
+    }
+  }
+</script>
 
 <!-- Ammo.js -->
 <script src="https://cdn.jsdelivr.net/npm/ammo.js@0.0.10/ammo.js"></script>
@@ -121,17 +129,36 @@
       ></a-entity>
     </a-entity>
 
-    <!-- Debug Components -->
-
-    <script src="js/desktop-controls.js"></script>
-
-        <!-- Main -->
-    <script src="js/materials.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/physics.js"></script>
-    <script src="js/abilities.js"></script>
-
   </a-scene>
+
+  <script type="module">
+    import AFRAME from 'aframe';
+    import * as THREE from 'three';
+
+    window.AFRAME = AFRAME;
+    window.THREE = THREE;
+
+    await import('./js/materials.js');
+
+    const scripts = [
+      'js/desktop-controls.js',
+      'js/main.js',
+      'js/physics.js',
+      'js/abilities.js'
+    ];
+
+    for (const source of scripts) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+
+        script.src = source;
+        script.onload = resolve;
+        script.onerror = reject;
+
+        document.body.appendChild(script);
+      });
+    }
+  </script>
 
 </body>
 </html>
