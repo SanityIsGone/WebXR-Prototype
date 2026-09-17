@@ -256,166 +256,228 @@ AFRAME.registerComponent('finger-grip', {
   },
 
   /* =-=-=-=-=-=| CURL FINGERS |=-=-=-=-=-= */
-
-updateFingers(grip) {
-
-  const maxCurl = {
-
-    thumb:  35 * Math.PI / 180,
-    index:  65 * Math.PI / 180,
-    middle: 70 * Math.PI / 180,
-    ring:   72 * Math.PI / 180,
-    pinky:  75 * Math.PI / 180
-
-  };
-
-  /*
-   * How much of the total curl each joint receives.
-   */
-  const jointMultipliers = {
-
-    thumb:  [0.45, 0.55],
-    index:  [0.35, 0.40, 0.25],
-    middle: [0.35, 0.40, 0.25],
-    ring:   [0.35, 0.40, 0.25],
-    pinky:  [0.35, 0.40, 0.25]
-
-  };
-
-  /*
-   * Multi-axis movement for each finger.
-   *
-   * X = primary curl
-   * Y/Z = optional sideways/twist correction
-   *
-   * These are deliberately small on Y/Z.
-   * You can tune them per finger if needed.
-   */
-  const fingerMotion = {
-
-    thumb: {
-      x: -1.00,
-      y: 0.00,
-      z: 1.00
-    },
-
-    index: {
-      x: -1.00,
-      y: 0.00,
-      z: 0.00
-    },
-
-    middle: {
-      x: 0.00,
-      y: 0.00,
-      z: -1.00
-    },
-
-    ring: {
-      x: -1.00,
-      y: 0.00,
-      z: 0.00
-    },
-
-    pinky: {
-      x: -1.00,
-      y: 0.00,
-      z: 0.00
-    }
-
-  };
-
-  /*
-   * Smooth controller input.
-   */
-  const smoothGrip =
-    grip * grip * (3 - 2 * grip);
-
-
-  for (const [fingerName, bones] of Object.entries(this.fingers)) {
-
-    if (bones.length === 0) {
-      continue;
-    }
-
-    const motion =
-      fingerMotion[fingerName];
-
-    const multipliers =
-      jointMultipliers[fingerName];
-
-    if (!motion || !multipliers) {
-      continue;
-    }
-
-    const totalCurl =
-      maxCurl[fingerName] *
-      smoothGrip *
-      this.data.curl;
-
-
-    bones.forEach((bone, index) => {
-
-      /*
-       * Never rotate the finger root bones.
-       */
-
-      const boneName = bone.name;
-
-      if (
-        boneName === 'Thumb' ||
-        boneName === 'Index' ||
-        boneName === 'Middle' ||
-        boneName === 'Ring' ||
-        boneName === 'Pinky'
-      ) {
-        return;
+  
+  updateFingers(grip) {
+  
+    const maxCurl = {
+  
+      thumb:  35 * Math.PI / 180,
+      index:  65 * Math.PI / 180,
+      middle: 70 * Math.PI / 180,
+      ring:   72 * Math.PI / 180,
+      pinky:  75 * Math.PI / 180
+  
+    };
+  
+    /*
+     * How much of the total curl each joint receives.
+     */
+    const jointMultipliers = {
+  
+      thumb:  [0.45, 0.55],
+      index:  [0.35, 0.40, 0.25],
+      middle: [0.35, 0.40, 0.25],
+      ring:   [0.35, 0.40, 0.25],
+      pinky:  [0.35, 0.40, 0.25]
+  
+    };
+  
+    /*
+     * Multi-axis movement for each finger.
+     *
+     * X = primary curl
+     * Y/Z = optional sideways/twist correction
+     */
+    const fingerMotion = {
+  
+      thumb: {
+        x: -1.00,
+        y: 0.00,
+        z: 1.00
+      },
+  
+      index: {
+        x: -1.00,
+        y: 0.00,
+        z: 0.00
+      },
+  
+      middle: {
+        x: 0.00,
+        y: 0.20,
+        z: -0.40
+      },
+  
+      ring: {
+        x: -1.00,
+        y: 0.00,
+        z: 0.00
+      },
+  
+      pinky: {
+        x: -1.00,
+        y: 0.00,
+        z: 0.00
       }
-
-
-      const base =
-        this.baseRotations.get(bone);
-
-      if (!base) {
-        return;
+  
+    };
+  
+    /*
+     * Fixed rotation offsets for the PARENT/ROOT bones.
+     *
+     * Values are in radians.
+     *
+     * Examples:
+     *   0.10  = about 5.7 degrees
+     *   0.20  = about 11.5 degrees
+     *   -0.10 = about -5.7 degrees
+     *
+     * Change these values to adjust the initial orientation
+     * of each finger.
+     */
+    const parentOffsets = {
+  
+      Thumb: {
+        x: 0.00,
+        y: 0.00,
+        z: 0.20
+      },
+  
+      Index: {
+        x: 0.20,
+        y: 0.00,
+        z: 0.00
+      },
+  
+      Middle: {
+        x: 0.10,
+        y: 0.00,
+        z: 0.00
+      },
+  
+      Ring: {
+        x: 0.00,
+        y: 0.00,
+        z: 0.00
+      },
+  
+      Pinky: {
+        x: -0.10,
+        y: 0.00,
+        z: 0.00
       }
-
-
-      const multiplier =
-        multipliers[index];
-
-      if (multiplier === undefined) {
-        return;
+  
+    };
+  
+    /*
+     * Smooth controller input.
+     */
+    const smoothGrip =
+      grip * grip * (3 - 2 * grip);
+  
+  
+    for (const [fingerName, bones] of Object.entries(this.fingers)) {
+  
+      if (bones.length === 0) {
+        continue;
       }
-
-      const amount =
-        totalCurl * multiplier;
-
-      /*
-       * Restore Blender's original rotation first.
-       */
-      bone.rotation.set(
-        base.x + 0.1,
-        base.y,
-        base.z
-      );
-
-      /*
-       * Apply rotation on MULTIPLE axes.
-       *
-       * Each axis can have its own direction/amount.
-       */
-      bone.rotation.x +=
-        motion.x * amount;
-
-      bone.rotation.y +=
-        motion.y * amount;
-
-      bone.rotation.z +=
-        motion.z * amount;
-
-    });
+  
+      const motion =
+        fingerMotion[fingerName];
+  
+      const multipliers =
+        jointMultipliers[fingerName];
+  
+      if (!motion || !multipliers) {
+        continue;
+      }
+  
+      const totalCurl =
+        maxCurl[fingerName] *
+        smoothGrip *
+        this.data.curl;
+  
+  
+      bones.forEach((bone, index) => {
+  
+        const boneName = bone.name;
+  
+        const base =
+          this.baseRotations.get(bone);
+  
+        if (!base) {
+          return;
+        }
+  
+  
+        /*
+         * --------------------------------------------------
+         * PARENT / ROOT BONE
+         * --------------------------------------------------
+         *
+         * Parent bones don't receive finger curl.
+         * They only receive their fixed orientation offset.
+         */
+        if (
+          boneName === 'Thumb' ||
+          boneName === 'Index' ||
+          boneName === 'Middle' ||
+          boneName === 'Ring' ||
+          boneName === 'Pinky'
+        ) {
+  
+          const offset =
+            parentOffsets[boneName];
+  
+          bone.rotation.set(
+            base.x + (offset?.x ?? 0),
+            base.y + (offset?.y ?? 0),
+            base.z + (offset?.z ?? 0)
+          );
+  
+          return;
+        }
+  
+  
+        /*
+         * --------------------------------------------------
+         * FINGER JOINTS
+         * --------------------------------------------------
+         */
+  
+        const multiplier =
+          multipliers[index];
+  
+        if (multiplier === undefined) {
+          return;
+        }
+  
+        const amount =
+          totalCurl * multiplier;
+  
+        /*
+         * Restore Blender's original rotation first.
+         */
+        bone.rotation.set(
+          base.x,
+          base.y,
+          base.z
+        );
+  
+        /*
+         * Apply rotation on MULTIPLE axes.
+         */
+        bone.rotation.x +=
+          motion.x * amount;
+  
+        bone.rotation.y +=
+          motion.y * amount;
+  
+        bone.rotation.z +=
+          motion.z * amount;
+  
+      });
+    }
   }
-}
-
+  
 });
