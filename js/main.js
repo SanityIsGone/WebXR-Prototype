@@ -52,7 +52,7 @@ if ( WebGL.isWebGL2Available() ) {
   const boxDepth = 1;
   const geometry = new THREE.BoxGeometry( boxWidth, boxHeight, boxDepth );
   
-  function makeInstance( geometry, color, x ) {
+  function makeInstance( geometry, color, x, y, z ) {
     const material = new THREE.MeshPhongMaterial( { color } );
     const cube = new THREE.Mesh( geometry, material );
     scene.add( cube );
@@ -61,9 +61,9 @@ if ( WebGL.isWebGL2Available() ) {
   }
   
   const cubes = [
-    makeInstance( geometry, 0x44aa88, 0 ),
-    makeInstance( geometry, 0x8844aa, - 2 ),
-    makeInstance( geometry, 0xaa8844, 2 ),
+    makeInstance( geometry, 0x44aa88, 0, 0, 0 ),
+    makeInstance( geometry, 0x8844aa, - 2, 0, 0 ),
+    makeInstance( geometry, 0xfafafa, 0, 0, 0 ),
   ];
   
   let prevTime = 0;
