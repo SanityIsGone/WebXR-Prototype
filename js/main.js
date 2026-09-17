@@ -261,11 +261,11 @@ AFRAME.registerComponent('finger-grip', {
   
     const maxCurl = {
   
-      thumb:  35 * Math.PI / 180,
-      index:  65 * Math.PI / 180,
-      middle: 70 * Math.PI / 180,
-      ring:   72 * Math.PI / 180,
-      pinky:  75 * Math.PI / 180
+      thumb:  135 * Math.PI / 180,
+      index:  165 * Math.PI / 180,
+      middle: 170 * Math.PI / 180,
+      ring:   172 * Math.PI / 180,
+      pinky:  175 * Math.PI / 180
   
     };
   
@@ -415,8 +415,7 @@ AFRAME.registerComponent('finger-grip', {
          * PARENT / ROOT BONE
          * --------------------------------------------------
          *
-         * Parent bones don't receive finger curl.
-         * They only receive their fixed orientation offset.
+         * Parent bones don't receive finger curl; they only receive their fixed orientation offset.
          */
         if (
           boneName === 'Thumb' ||
@@ -455,18 +454,15 @@ AFRAME.registerComponent('finger-grip', {
         const amount =
           totalCurl * multiplier;
   
-        /*
-         * Restore Blender's original rotation first.
-         */
+        /* Restore Blender's original rotation first. */
         bone.rotation.set(
           base.x,
           base.y,
           base.z
         );
   
-        /*
-         * Apply rotation on MULTIPLE axes.
-         */
+        /* Apply rotation on MULTIPLE axes. */
+
         bone.rotation.x +=
           motion.x * amount;
   
