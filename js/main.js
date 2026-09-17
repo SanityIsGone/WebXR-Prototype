@@ -63,7 +63,7 @@ if ( WebGL.isWebGL2Available() ) {
   const cubes = [
     makeInstance( geometry, 0x44aa88, 0, 0, 0 ),
     makeInstance( geometry, 0x8844aa, - 2, 0, 0 ),
-    makeInstance( geometry, 0xfafafa, 0, 0, 0 ),
+    makeInstance( geometry, 0x2a2a2a, 2, 0, 0 ),
   ];
   
   let prevTime = 0;
