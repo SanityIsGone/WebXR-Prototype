@@ -54,7 +54,7 @@ if ( WebGL.isWebGL2Available() ) {
   const boxWidth = 1;
   const boxHeight = 1;
   const boxDepth = 1;
-  const geometry = new THREE.BoxGeometry( boxWidth, boxHeight, boxDepth );
+  const geometry = new THREE.SphereGeometry( boxWidth, boxHeight, boxDepth );
   
   function makeInstance( geometry, color, x, y, z, material = null ) {
     if ( material === null ) {
