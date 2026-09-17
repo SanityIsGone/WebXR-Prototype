@@ -51,7 +51,7 @@ if ( WebGL.isWebGL2Available() ) {
   scene.add( AmbientLight );
   //* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   
-  const radius = 1;
+  const radius = 0.5;
   const widthSegments = 20;
   const heightSegments = 20;
   const geometry = new THREE.SphereGeometry( radius, widthSegments, heightSegments );
@@ -88,13 +88,6 @@ if ( WebGL.isWebGL2Available() ) {
       camera.aspect = canvas.clientWidth / canvas.clientHeight;
       camera.updateProjectionMatrix();
     }
-  
-    cubes.forEach((cube, ndx) => {
-      const speed = 1 + ndx * 0.1;
-      const rot = speed * deltaTime;
-      cube.rotation.x += rot;
-      cube.rotation.y += rot;
-    });
   
     navigator.gpu ? renderer.renderAsync(scene, camera) : renderer.render(scene, camera);
     
