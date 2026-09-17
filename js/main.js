@@ -51,10 +51,10 @@ if ( WebGL.isWebGL2Available() ) {
   scene.add( AmbientLight );
   //* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   
-  const boxWidth = 1;
-  const boxHeight = 1;
-  const boxDepth = 1;
-  const geometry = new THREE.SphereGeometry( boxWidth, boxHeight, boxDepth );
+  const radius = 1;
+  const widthSegments = 20;
+  const heightSegments = 20;
+  const geometry = new THREE.SphereGeometry( radius, widthSegments, heightSegments );
   
   function makeInstance( geometry, color, x, y, z, material = null ) {
     if ( material === null ) {
