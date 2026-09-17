@@ -34,21 +34,55 @@
 
 <body>
   <a-scene>
-
     <a-assets>
       <a-asset-item
         id="right-hand-model"
         src="./models/vr-hand-right.glb">
       </a-asset-item>
+      <a-asset-item
+      id="left-hand-model"
+      src="./models/vr-hand-left.glb">
+    </a-asset-item>
     </a-assets>
   
     <a-camera position="0 1.6 0"></a-camera>
   
-    <a-entity
-      gltf-model="#right-hand-model"
-      position="0 1.5 -1">
-    </a-entity>
-  
+<!-- Left controller -->
+<a-entity
+  id="left-controller"
+  laser-controls="hand: left"
+  raycaster="objects: .interactive"
+  line="color: #00ffff; opacity: 0.75">
+
+  <a-entity
+    id="left-hand"
+    gltf-model="#left-hand-model"
+    position="-0.02 0.03 0.03"
+    rotation="180 0 110"
+    scale="0.7 0.7 0.7">
+  </a-entity>
+
+</a-entity>
+
+<!-- Right controller -->
+<a-entity
+  id="right-controller"
+  laser-controls="hand: right"
+  raycaster="objects: .interactive"
+  line="color: #00ffff; opacity: 0.75">
+
+  <a-entity
+    id="right-hand"
+    gltf-model="#right-hand-model"
+    position="0.02 0.03 0.03"
+    rotation="0 0 -70"
+    scale="0.7 0.7 0.7">
+  </a-entity>
+
+</a-entity>
+
   </a-scene>
+
+  <script type="module" src="./js/main.js"></script>
 </body>
 </html>
