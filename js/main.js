@@ -1,9 +1,13 @@
+
+  //* =-=-=-=-=-=| PROJECT IMPORTS |=-=-=-=-=-=
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import Stats from 'three/addons/libs/stats.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import WebGL from 'three/addons/capabilities/WebGL.js';
+  //* =-=-=-=-=-=| MATERIAL IMPORTS |=-=-=-=-=-=
+import { waterMaterial } from './materials.js';
 
 if ( WebGL.isWebGL2Available() ) {
 
@@ -52,16 +56,21 @@ if ( WebGL.isWebGL2Available() ) {
   const boxDepth = 1;
   const geometry = new THREE.BoxGeometry( boxWidth, boxHeight, boxDepth );
   
-  function makeInstance( geometry, color, x, y, z ) {
-    const material = new THREE.MeshPhongMaterial( { color } );
+  function makeInstance( geometry, color, x, y, z, material = null ) {
+    if ( material === null ) {
+      material = new THREE.MeshPhongMaterial( { color } );
+    }
     const cube = new THREE.Mesh( geometry, material );
     scene.add( cube );
     cube.position.x = x;
+    cube.position.y = y;
+    cube.position.z = z;
     return cube;
+  
   }
   
   const cubes = [
-    makeInstance( geometry, 0x44aa88, 0, 0, 0 ),
+    makeInstance( geometry, 0x44aa88, 0, 0, 0, waterMaterial ),
     makeInstance( geometry, 0x8844aa, - 2, 0, 0 ),
     makeInstance( geometry, 0x2a2a2a, 2, 0, 0 ),
   ];
