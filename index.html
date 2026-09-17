@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VR Test</title>
   <!-- <base href="/WebXR-Prototype/"> -->
-  <script type="importmap">
+  <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+<script type="importmap">
   {
     "imports": {
       "three": "https://cdn.jsdelivr.net/npm/three@0.179.0/build/three.module.js",
@@ -32,8 +33,22 @@
 </head>
 
 <body>
-  <canvas id="c"></canvas>
+  <a-scene>
 
-  <script type="module" src="js/main.js"></script>
+    <a-assets>
+      <a-asset-item
+        id="right-hand-model"
+        src="./models/vr-hand-right.glb">
+      </a-asset-item>
+    </a-assets>
+  
+    <a-camera position="0 1.6 0"></a-camera>
+  
+    <a-entity
+      gltf-model="#right-hand-model"
+      position="0 1.5 -1">
+    </a-entity>
+  
+  </a-scene>
 </body>
 </html>
