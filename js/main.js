@@ -7,6 +7,7 @@ import Stats from 'three/addons/libs/stats.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import WebGL from 'three/addons/capabilities/WebGL.js';
   //* =-=-=-=-=-=| MATERIAL IMPORTS |=-=-=-=-=-=
+import { waterMaterial } from './materials.js';
 
 if ( WebGL.isWebGL2Available() ) {
 
@@ -69,7 +70,7 @@ if ( WebGL.isWebGL2Available() ) {
   }
   
   const cubes = [
-    makeInstance( geometry, 0x44aa88, 0, 0, 0 ),
+    makeInstance( geometry, 0x44aa88, 0, 0, 0, waterMaterial),
     makeInstance( geometry, 0x8844aa, - 2, 0, 0 ),
     makeInstance( geometry, 0x2a2a2a, 2, 0, 0 ),
   ];
