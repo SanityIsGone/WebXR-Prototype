@@ -1,15 +1,18 @@
 import { MeshPhysicalNodeMaterial } from 'three/webgpu';
-
+import * as THREE from 'three';
 // ============================================================
 // PROCEDURAL MATERIALS
 // ============================================================
 
 // Water
-export let waterMaterial; 
-const loader = new THREE.MaterialLoader();
-fetch('material.json')
-  .then(res => res.json())
-  .then(json => {
-  waterMaterial = loader.parse(json);
-  });
-// Next
+
+export const waterMaterial = new MeshPhysicalNodeMaterial();
+waterMaterial.color.set(0x94e2fe);
+waterMaterial.roughness = 0;
+waterMaterial.metalness = 0;
+waterMaterial.dispersion = 1;
+waterMaterial.transmission = 1;
+waterMaterial.thickness = 0.5;
+waterMaterial.reflectivity = 0.3568;
+waterMaterial.iridescence = 0.5;
+waterMaterial.iridescenceIOR = 1.3;
