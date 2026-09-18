@@ -267,11 +267,11 @@ AFRAME.registerComponent('finger-grip', {
      */
     const jointMultipliers = {
   
-      thumb:  [0.55, 0.7],
-      index:  [0.35, 0.40, 0.7],
-      middle: [0.35, 0.40, 0.7],
-      ring:   [0.35, 0.40, 0.7],
-      pinky:  [0.35, 0.40, 0.7]
+      thumb:  [0.4, 0.6],
+      index:  [0.35, 0.6, 0.75, 0.9],
+      middle: [0.35, 0.4, 0.5, 0.7],
+      ring:   [0.35, 0.4, 0.5, 0.7],
+      pinky:  [0.35, 0.4, 0.5, 0.7]
   
     };
   
@@ -285,32 +285,32 @@ AFRAME.registerComponent('finger-grip', {
   
       thumb: {
         x: -1.00,
-        y: 0.30,
-        z: -0.10
+        y: -0.3,
+        z: -0.5
       },
   
       index: {
         x: -1.00,
         y: 0.00,
-        z: 0.00
+        z: 0.05
       },
   
       middle: {
-        x: -0.10,
-        y: 0.0,
+        x: -0.20,
+        y: 0.20,
         z: -1.00
       },
   
       ring: {
         x: -1.00,
-        y: 0.00,
-        z: -0.3
+        y: 0.10,
+        z: -0.1
       },
   
       pinky: {
         x: -1.00,
-        y: 0.00,
-        z: -0.3
+        y: 0.10,
+        z: -0.1
       }
   
     };
@@ -437,12 +437,16 @@ AFRAME.registerComponent('finger-grip', {
          * --------------------------------------------------
          */
   
-        const multiplier =
-          multipliers[index];
-  
-        if (multiplier === undefined) {
-          return;
-        }
+        const jointIndex =
+        fingerName === 'thumb'
+          ? index
+          : index - 1;
+      
+      const multiplier = multipliers[index];
+      
+      if (multiplier === undefined) {
+        return;
+      }
   
         const amount =
           totalCurl * multiplier;
