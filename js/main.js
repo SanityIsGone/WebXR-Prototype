@@ -235,7 +235,7 @@ AFRAME.registerComponent('finger-grip', {
     }
   
     const handedness =
-      this.data.controller?.getAttribute('laser-controls')?.hand;
+      this.data.controller?.getAttribute('oculus-touch-controls')?.hand;
   
     for (const source of session.inputSources) {
       if (source.handedness !== handedness) {
@@ -274,11 +274,11 @@ AFRAME.registerComponent('finger-grip', {
      */
     const jointMultipliers = {
   
-      thumb:  [0.45, 0.55],
-      index:  [0.35, 0.40, 0.25],
-      middle: [0.35, 0.40, 0.25],
-      ring:   [0.35, 0.40, 0.25],
-      pinky:  [0.35, 0.40, 0.25]
+      thumb:  [0.55, 0.7],
+      index:  [0.35, 0.40, 0.7],
+      middle: [0.35, 0.40, 0.7],
+      ring:   [0.35, 0.40, 0.7],
+      pinky:  [0.35, 0.40, 0.7]
   
     };
   
@@ -292,8 +292,8 @@ AFRAME.registerComponent('finger-grip', {
   
       thumb: {
         x: -1.00,
-        y: 0.00,
-        z: 1.00
+        y: 0.30,
+        z: -0.10
       },
   
       index: {
@@ -303,21 +303,21 @@ AFRAME.registerComponent('finger-grip', {
       },
   
       middle: {
-        x: 0.00,
-        y: 0.20,
-        z: -0.40
+        x: -0.10,
+        y: 0.0,
+        z: -1.00
       },
   
       ring: {
         x: -1.00,
         y: 0.00,
-        z: 0.00
+        z: -0.3
       },
   
       pinky: {
         x: -1.00,
         y: 0.00,
-        z: 0.00
+        z: -0.3
       }
   
     };
@@ -340,17 +340,17 @@ AFRAME.registerComponent('finger-grip', {
       Thumb: {
         x: 0.00,
         y: 0.00,
-        z: 0.20
+        z: 0.00
       },
   
       Index: {
-        x: 0.20,
+        x: 0.00,
         y: 0.00,
         z: 0.00
       },
   
       Middle: {
-        x: 0.10,
+        x: 0.00,
         y: 0.00,
         z: 0.00
       },
@@ -362,7 +362,7 @@ AFRAME.registerComponent('finger-grip', {
       },
   
       Pinky: {
-        x: -0.10,
+        x: 0.0,
         y: 0.00,
         z: 0.00
       }
@@ -420,9 +420,9 @@ AFRAME.registerComponent('finger-grip', {
         if (
           boneName === 'Thumb' ||
           boneName === 'Index' ||
-          boneName === 'Middle' ||
-          boneName === 'Ring' ||
-          boneName === 'Pinky'
+          boneName === '03_Middle' ||
+          boneName === '04_Ring' ||
+          boneName === '05_Pinky'
         ) {
   
           const offset =
@@ -464,13 +464,13 @@ AFRAME.registerComponent('finger-grip', {
         /* Apply rotation on MULTIPLE axes. */
 
         bone.rotation.x +=
-          motion.x * amount;
+          motion.x * amount / 1.1;
   
         bone.rotation.y +=
-          motion.y * amount;
+          motion.y * amount / 1.1;
   
         bone.rotation.z +=
-          motion.z * amount;
+          motion.z * amount / 1.1;
   
       });
     }
