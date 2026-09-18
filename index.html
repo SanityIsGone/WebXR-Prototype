@@ -6,6 +6,7 @@
   <title>VR Test</title>
   <!-- <base href="/WebXR-Prototype/"> -->
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.6.0/dist/aframe-extras.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@c-frame/aframe-physics-system@v4.2.2/dist/aframe-physics-system.min.js"></script>
 <script type="importmap">
   {
@@ -34,7 +35,10 @@
 </head>
 
 <body>
-  <a-scene physics>
+  <a-scene
+  physics
+  shadow="type: pcf">
+
     <a-assets>
       <a-asset-item
         id="right-hand-model"
@@ -51,12 +55,11 @@
 <!-- Left controller -->
 <a-entity
   id="left-controller"
-  meta-touch-controls="hand: left; model: true;"
-  laser-controls
+  oculus-touch-controls="hand: left; model: true;"
   raycaster="objects: .interactive"
   line="color: #00ffff; opacity: 0.75"
-  tracked-controls
-  sphere-collider
+  static-body="shape: sphere; sphereRadius: 0.02"
+  sphere-collider="objects: .grabbable"
   grab
   throw>
 
@@ -74,12 +77,11 @@
 <!-- Right controller -->
 <a-entity
   id="right-controller"
-  meta-touch-controls="hand: right; model: true;"
-  laser-controls
+  oculus-touch-controls="hand: right; model: true;"
   raycaster="objects: .interactive"
   line="color: #00ffff; opacity: 0.75"
-  tracked-controls
-  sphere-collider
+  static-body="shape: sphere; sphereRadius: 0.02"
+  sphere-collider="objects: .grabbable"
   grab
   throw>
 
@@ -95,14 +97,59 @@
 </a-entity>
 
 
-<!-- Interactable Ball -->
+<!-- Interactable Ball & Ground-->
 
   <a-sphere
-    position="0 2 -4"
-    radius="0.5"
+    class="grabbable"
+    grabbable
+    position="0 1 -2"
+    radius="0.3"
     color="red"
-    dynamic-body="shape: sphere">
+    dynamic-body="shape: sphere; sphereRadius: 0.3"
+    shadow="cast: true; receive: true">
   </a-sphere>
+
+  <a-plane
+    position="0 0 0"
+    rotation="-90 0 0"
+    width="20"
+    height="20"
+    color="#777"
+    shadow="receive: true">
+  </a-plane>
+  <!-- Physics ground -->
+    <a-box
+    position="0 -0.05 0"
+    width="20"
+    height="0.1"
+    depth="20"
+    visible="false"
+    static-body>
+    </a-box>
+
+
+<!-- Lights-->
+  <a-light
+    type="ambient"
+    color="#ffffff"
+    intensity="0.5">
+  </a-light>
+
+  <a-light
+    type="directional"
+    position="-3 5 2"
+    light="castShadow: true; intensity: 2"
+    shadow-camera-visible="true"
+    shadow-camera-left="-5"
+    shadow-camera-right="5"
+    shadow-camera-top="5"
+    shadow-camera-bottom="-5"
+    shadow-camera-near="0.1"
+    shadow-camera-far="20"
+    shadow-map-width="4096"
+    shadow-map-height="4096">
+</a-light>
+
 
 </a-scene>
 
