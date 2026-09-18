@@ -6,6 +6,7 @@
   <title>VR Test</title>
   <!-- <base href="/WebXR-Prototype/"> -->
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@c-frame/aframe-physics-system@v4.2.2/dist/aframe-physics-system.min.js"></script>
 <script type="importmap">
   {
     "imports": {
@@ -33,7 +34,7 @@
 </head>
 
 <body>
-  <a-scene>
+  <a-scene physics>
     <a-assets>
       <a-asset-item
         id="right-hand-model"
@@ -50,7 +51,7 @@
 <!-- Left controller -->
 <a-entity
   id="left-controller"
-  oculus-touch-controls="hand: left; model: true;"
+  meta-touch-controls="hand: left; model: true;"
   laser-controls
   raycaster="objects: .interactive"
   line="color: #00ffff; opacity: 0.75"
@@ -73,7 +74,7 @@
 <!-- Right controller -->
 <a-entity
   id="right-controller"
-  oculus-touch-controls="hand: right; model: true;"
+  meta-touch-controls="hand: right; model: true;"
   laser-controls
   raycaster="objects: .interactive"
   line="color: #00ffff; opacity: 0.75"
@@ -93,7 +94,17 @@
 
 </a-entity>
 
-  </a-scene>
+
+<!-- Interactable Ball -->
+
+  <a-sphere
+    position="0 2 -4"
+    radius="0.5"
+    color="red"
+    dynamic-body="shape: sphere">
+  </a-sphere>
+
+</a-scene>
 
   <script type="module" src="./js/main.js"></script>
 </body>
