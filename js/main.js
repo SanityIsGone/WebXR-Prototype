@@ -1,11 +1,12 @@
-//* =-=-=-=-=-=| PROJECT IMPORTS |=-=-=-=-=-=
+/* =-=-=-=-=-=| PROJECT IMPORTS |=-=-=-=-=-= */
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import Stats from 'three/addons/libs/stats.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import WebGL from 'three/addons/capabilities/WebGL.js';
-  //* =-=-=-=-=-=| MATERIAL IMPORTS |=-=-=-=-=-=
+
+/* =-=-=-=-=-=| MATERIAL IMPORTS |=-=-=-=-=-= */
 import { waterMaterial } from './materials.js';
 
 /* =-=-=-=-=-=| GRIP-CONTROLLED VR HAND |=-=-=-=-=-= */
@@ -70,41 +71,35 @@ AFRAME.registerComponent('finger-grip', {
     /* These are the ACTUAL bone names from the GLB. */
 
     const boneNames = {
-    
       thumb: [
         'Bone006',
         'Bone007'
       ],
-    
       index: [
         'Bone008',
         'Bone009',
         'Bone010'
       ],
-    
       middle: [
         '03_Middle',
         '03_Middle001',
         '03_Middle002',
         '03_Middle003'
       ],
-    
       ring: [
         '04_Ring',
         '04_Ring001',
         '04_Ring002',
         '04_Ring003'
       ],
-    
       pinky: [
         '05_Pinky',
         '05_Pinky001',
         '05_Pinky002',
         '05_Pinky003'
       ]
-    
     };
-    
+
     /* Search the entire imported GLTF hierarchy for bones. */
 
     this.el.object3D.traverse(object => {
@@ -133,10 +128,6 @@ AFRAME.registerComponent('finger-grip', {
 
         });
 
-        console.log(
-          `[finger-grip] Found ${fingerName} bone: ${object.name}`
-        );
-
       }
 
     });
@@ -148,38 +139,9 @@ AFRAME.registerComponent('finger-grip', {
           0
         );
 
-    console.log(
-      `[finger-grip] ${this.el.id}: found ${totalBones} finger bones`
-    );
-
-    console.log(
-      '[finger-grip] finger structure:',
-      this.fingers
-    );
-
     /* Print every bone if the expected finger bones were not found. */
 
     if (totalBones === 0) {
-
-      console.error(
-        `[finger-grip] No finger bones found on ${this.el.id}.`
-      );
-
-      console.log(
-        '[finger-grip] All bones in this model:'
-      );
-
-      this.el.object3D.traverse(object => {
-
-        if (object.type === 'Bone' || object.isBone) {
-
-          console.log(
-            `  ${object.name}`
-          );
-
-        }
-
-      });
 
       return;
 
@@ -207,115 +169,94 @@ AFRAME.registerComponent('finger-grip', {
 
   getGripValue() {
     const scene = this.el.sceneEl;
-  
     if (!scene || !scene.renderer) {
       return 0;
     }
-  
     const renderer = scene.renderer;
-  
     // A-Frame's WebGL/WebXR renderer
     const xr = renderer.xr;
-  
     if (!xr || !xr.isPresenting) {
       return 0;
     }
-  
     const session = xr.getSession();
-  
     if (!session) {
       return 0;
     }
-  
     const handedness =
       this.data.controller?.getAttribute('oculus-touch-controls')?.hand;
-  
     for (const source of session.inputSources) {
       if (source.handedness !== handedness) {
         continue;
       }
-  
       const gamepad = source.gamepad;
-  
       if (!gamepad) {
         continue;
       }
-  
       // Button 1 is normally squeeze/grip.
       return gamepad.buttons[1]?.value ?? 0;
     }
-  
     return 0;
   },
 
   /* =-=-=-=-=-=| CURL FINGERS |=-=-=-=-=-= */
-  
+
   updateFingers(grip) {
-  
     const maxCurl = {
-  
       thumb:  135 * Math.PI / 180,
       index:  165 * Math.PI / 180,
       middle: 170 * Math.PI / 180,
       ring:   172 * Math.PI / 180,
       pinky:  175 * Math.PI / 180
-  
     };
-  
-    /*
+
+    /**
      * How much of the total curl each joint receives.
      */
+
     const jointMultipliers = {
-  
       thumb:  [0.4, 0.6],
       index:  [0.35, 0.6, 0.75, 0.9],
       middle: [0.35, 0.4, 0.5, 0.7],
       ring:   [0.35, 0.4, 0.5, 0.7],
       pinky:  [0.35, 0.4, 0.5, 0.7]
-  
     };
-  
-    /*
+
+    /**
      * Multi-axis movement for each finger.
      *
      * X = primary curl
      * Y/Z = optional sideways/twist correction
      */
+
     const fingerMotion = {
-  
       thumb: {
         x: -1.00,
         y: -0.3,
         z: -0.5
       },
-  
       index: {
         x: -1.00,
         y: 0.00,
         z: 0.05
       },
-  
       middle: {
         x: -0.20,
         y: 0.20,
         z: -1.00
       },
-  
       ring: {
         x: -1.00,
         y: 0.10,
         z: -0.1
       },
-  
       pinky: {
         x: -1.00,
         y: 0.10,
         z: -0.1
       }
-  
     };
-  
-    /*
+
+    /**
      * Fixed rotation offsets for the PARENT/ROOT bones.
      *
      * Values are in radians.
@@ -328,88 +269,81 @@ AFRAME.registerComponent('finger-grip', {
      * Change these values to adjust the initial orientation
      * of each finger.
      */
+
     const parentOffsets = {
-  
       Thumb: {
         x: 0.00,
         y: 0.00,
         z: 0.00
       },
-  
       Index: {
         x: 0.00,
         y: 0.00,
         z: 0.00
       },
-  
       Middle: {
         x: 0.00,
         y: 0.00,
         z: 0.00
       },
-  
       Ring: {
         x: 0.00,
         y: 0.00,
         z: 0.00
       },
-  
       Pinky: {
         x: 0.0,
         y: 0.00,
         z: 0.00
       }
-  
     };
-  
-    /*
+
+    /**
      * Smooth controller input.
      */
+
     const smoothGrip =
       grip * grip * (3 - 2 * grip);
-  
-  
+
     for (const [fingerName, bones] of Object.entries(this.fingers)) {
-  
       if (bones.length === 0) {
         continue;
       }
-  
+
       const motion =
         fingerMotion[fingerName];
-  
+
       const multipliers =
         jointMultipliers[fingerName];
-  
+
       if (!motion || !multipliers) {
         continue;
       }
-  
+
       const totalCurl =
         maxCurl[fingerName] *
         smoothGrip *
         this.data.curl;
-  
-  
+
       bones.forEach((bone, index) => {
-  
+
         const boneName = bone.name;
-  
+
         const base =
           this.baseRotations.get(bone);
-  
+
         if (!base) {
           return;
         }
-  
-  
-        /*
+
+        /**
          * --------------------------------------------------
          * PARENT / ROOT BONE
          * --------------------------------------------------
          *
          * Parent bones don't receive finger curl; they only receive their fixed orientation offset.
          */
+
         if (
           boneName === 'Thumb' ||
           boneName === 'Index' ||
@@ -417,60 +351,62 @@ AFRAME.registerComponent('finger-grip', {
           boneName === '04_Ring' ||
           boneName === '05_Pinky'
         ) {
-  
+
           const offset =
             parentOffsets[boneName];
-  
+
           bone.rotation.set(
             base.x + (offset?.x ?? 0),
             base.y + (offset?.y ?? 0),
             base.z + (offset?.z ?? 0)
           );
-  
+
           return;
         }
-  
-  
-        /*
+
+        /**
          * --------------------------------------------------
          * FINGER JOINTS
          * --------------------------------------------------
          */
-  
+
         const jointIndex =
-        fingerName === 'thumb'
-          ? index
-          : index - 1;
-      
-      const multiplier = multipliers[index];
-      
-      if (multiplier === undefined) {
-        return;
-      }
-  
+          fingerName === 'thumb'
+            ? index
+            : index - 1;
+
+        const multiplier = multipliers[index];
+
+        if (multiplier === undefined) {
+          return;
+        }
+
         const amount =
           totalCurl * multiplier;
-  
+
         /* Restore Blender's original rotation first. */
+
         bone.rotation.set(
           base.x,
           base.y,
           base.z
         );
-  
+
         /* Apply rotation on MULTIPLE axes. */
 
         bone.rotation.x +=
           motion.x * amount / 1.1;
-  
+
         bone.rotation.y +=
           motion.y * amount / 1.1;
-  
+
         bone.rotation.z +=
           motion.z * amount / 1.1;
-  
+
       });
+
     }
+
   }
-  
+
 });
