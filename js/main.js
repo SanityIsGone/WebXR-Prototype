@@ -18,13 +18,6 @@ AFRAME.registerComponent('finger-grip', {
       type: 'selector'
     },
 
-    /* Rotation axis used to curl the fingers. */
-
-    axis: {
-      type: 'string',
-      default: 'x'
-    },
-
     /* Multiplier for the overall curl. 1.0 = normal. */
 
     curl: {
