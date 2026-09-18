@@ -50,7 +50,7 @@
 <!-- Left controller -->
 <a-entity
   id="left-controller"
-  oculus-touch-controls="hand: left; model: false;"
+  oculus-touch-controls="hand: left; model: true;"
   raycaster="objects: .interactive"
   line="color: #00ffff; opacity: 0.75">
 
@@ -59,7 +59,7 @@
   gltf-model="#left-hand-model"
   position="-0.02 0.03 0.03"
   rotation="180 0 110"
-  scale="0.7 0.7 0.7"
+  scale="1 1 1"
   finger-grip="controller: #left-controller">
 </a-entity>
 
@@ -68,7 +68,7 @@
 <!-- Right controller -->
 <a-entity
   id="right-controller"
-  oculus-touch-controls="hand: right; model: false;"
+  oculus-touch-controls="hand: right; model: true;"
   raycaster="objects: .interactive"
   line="color: #00ffff; opacity: 0.75">
 
@@ -77,7 +77,7 @@
   gltf-model="#right-hand-model"
   position="0.02 0.03 0.03"
   rotation="0 0 -70"
-  scale="0.7 0.7 0.7"
+  scale="1 1 1"
   finger-grip="controller: #right-controller">
 </a-entity>
 
