@@ -2,10 +2,6 @@
 // Spell Data
 // =============================================
 
-// Examples:
-// target.health -= Kyma.damage;
-// focus.current -= Elxi.getFocusCost(skill.level) / 10;
-
 class Spell {
     constructor({
         name, // name of the spell
@@ -192,3 +188,560 @@ const Katarraktis = new Spell({
 // Spell Gesture Detection
 // =============================================
 
+
+
+class Controller {
+    constructor(entity, camera) {
+        this.entity = entity;
+        this.camera = camera;
+
+        // Reusable objects
+        const worldPosition = new THREE.Vector3();
+        const worldQuaternion = new THREE.Quaternion();
+
+        const relativePosition = new THREE.Vector3();
+        const relativeQuaternion = new THREE.Quaternion();
+
+        const relativeWorldPosition = new THREE.Vector3();
+        const relativeWorldQuaternion = new THREE.Quaternion();
+        const inverseHeadsetQuaternion = new THREE.Quaternion();
+
+// -------------------------
+// Position
+// -------------------------
+
+        this.position = {
+            get local() {
+                return entity.object3D.position;
+            },
+        
+            get world() {
+                entity.object3D.getWorldPosition(worldPosition);
+                return worldPosition;
+            },
+        
+            get relative() {
+                entity.object3D.getWorldPosition(worldPosition);
+                camera.object3D.getWorldPosition(relativeWorldPosition);
+                camera.object3D.getWorldQuaternion(relativeWorldQuaternion);
+        
+                inverseHeadsetQuaternion
+                    .copy(relativeWorldQuaternion)
+                    .invert();
+        
+                return relativePosition
+                    .copy(worldPosition)
+                    .sub(relativeWorldPosition)
+                    .applyQuaternion(inverseHeadsetQuaternion);
+            }
+        };
+
+// -------------------------
+// ROTATION
+// -------------------------
+
+this.rotation = {
+
+    get local() {
+        return entity.object3D.quaternion;
+    },
+
+    get world() {
+        entity.object3D.getWorldQuaternion(
+            worldQuaternion
+        );
+
+        return worldQuaternion;
+    },
+
+    get relative() {
+        entity.object3D.getWorldQuaternion(
+            worldQuaternion
+        );
+
+        camera.object3D.getWorldQuaternion(
+            relativeWorldQuaternion
+        );
+
+        return relativeQuaternion
+            .copy(relativeWorldQuaternion)
+            .invert()
+            .multiply(worldQuaternion);
+    }
+};
+// -------------------------
+// INPUT
+// -------------------------
+
+Object.defineProperties(this, {
+
+    trigger: {
+        get() {
+            const trackedControls =
+                this.entity.components["tracked-controls"];
+
+            const iwerGamepad =
+                trackedControls?.controller;
+
+            if (!iwerGamepad) return 0;
+
+            const symbols =
+                Object.getOwnPropertySymbols(iwerGamepad);
+
+            const inputSource =
+                iwerGamepad[symbols[0]];
+
+            const gamepad =
+                inputSource?.gamepad;
+
+            return gamepad?.buttons?.[0]?.value ?? 0;
+        }
+    },
+
+    grip: {
+        get() {
+            const trackedControls =
+                this.entity.components["tracked-controls"];
+
+            const iwerGamepad =
+                trackedControls?.controller;
+
+            if (!iwerGamepad) return 0;
+
+            const symbols =
+                Object.getOwnPropertySymbols(iwerGamepad);
+
+            const inputSource =
+                iwerGamepad[symbols[0]];
+
+            const gamepad =
+                inputSource?.gamepad;
+
+            return gamepad?.buttons?.[1]?.value ?? 0;
+        }
+    },
+
+    primary: {
+        get() {
+            const trackedControls =
+                this.entity.components["tracked-controls"];
+
+            const iwerGamepad =
+                trackedControls?.controller;
+
+            if (!iwerGamepad) return 0;
+
+            const symbols =
+                Object.getOwnPropertySymbols(iwerGamepad);
+
+            const inputSource =
+                iwerGamepad[symbols[0]];
+
+            const gamepad =
+                inputSource?.gamepad;
+
+            return gamepad?.buttons?.[4]?.value ?? 0;
+        }
+    },
+
+    secondary: {
+        get() {
+            const trackedControls =
+                this.entity.components["tracked-controls"];
+
+            const iwerGamepad =
+                trackedControls?.controller;
+
+            if (!iwerGamepad) return 0;
+
+            const symbols =
+                Object.getOwnPropertySymbols(iwerGamepad);
+
+            const inputSource =
+                iwerGamepad[symbols[0]];
+
+            const gamepad =
+                inputSource?.gamepad;
+
+            return gamepad?.buttons?.[5]?.value ?? 0;
+        }
+    }
+
+});
+    }
+}
+
+class Controllers {
+    constructor() {
+        const camera = document.querySelector('#camera');
+
+        this.left = new Controller(
+            document.querySelector('#left-controller'),
+            camera
+        );
+
+        this.right = new Controller(
+            document.querySelector('#right-controller'),
+            camera
+        );
+    }
+}
+
+
+// =============================================
+// Spell Gesture States
+// =============================================
+
+const settings = { // defines which hand should be used as the dominant hand
+    dominantHand: "right"
+};
+
+/*
+Creates a check for a state of a specific spell in the state machine.
+Each spellGesture object is one state of that spell's gesture.
+*/
+
+class spellGesture {
+    constructor({
+        state,
+        right = null,
+        left = null
+    }) {
+        this.state = state;
+        this.right = right;
+        this.left = left;
+    }
+
+    // ─────────────────────────────────────────
+    // Utility
+    // ─────────────────────────────────────────
+
+    angleDifference(a, b) {
+        return THREE.MathUtils.euclideanModulo(
+            a - b + Math.PI,
+            Math.PI * 2
+        ) - Math.PI;
+    }
+
+    // ─────────────────────────────────────────
+    // Mirroring
+    // ─────────────────────────────────────────
+
+    mirrorPosition(position) {
+        return {
+            x: -position.x,
+            y: position.y,
+            z: position.z
+        };
+    }
+
+    mirrorRotation(rotation) {
+        return {
+            x: -rotation.x,
+            y: rotation.y,
+            z: -rotation.z
+        };
+    }
+
+    // ─────────────────────────────────────────
+    // Position
+    // ─────────────────────────────────────────
+
+    getPosition(controller, requirements) {
+        if (!requirements.position) return true;
+
+        let position = requirements.position;
+        const tolerance = requirements.positionTolerance ?? 0.1;
+        
+        if (settings.dominantHand === "left") {
+            position = this.mirrorPosition(position);
+        }
+
+        return (
+            Math.abs(
+                controller.position.relative.x - position.x
+            ) <= tolerance &&
+
+            Math.abs(
+                controller.position.relative.y - position.y
+            ) <= tolerance &&
+
+            Math.abs(
+                controller.position.relative.z - position.z
+            ) <= tolerance
+        );
+    }
+
+    // ─────────────────────────────────────────
+    // Rotation
+    // ─────────────────────────────────────────
+
+    getRotation(controller, requirements) {
+        if (!requirements.rotation) return true;
+
+        let rotation = requirements.rotation;
+        const tolerance = requirements.rotationTolerance ?? 0.2;
+        
+        if (settings.dominantHand === "left") {
+            rotation = this.mirrorRotation(rotation);
+        }
+
+        const euler = new THREE.Euler()
+            .setFromQuaternion(
+                controller.rotation.relative
+            );
+
+        return (
+            Math.abs(
+                this.angleDifference(
+                    euler.x,
+                    rotation.x
+                )
+            ) <= tolerance &&
+
+            Math.abs(
+                this.angleDifference(
+                    euler.y,
+                    rotation.y
+                )
+            ) <= tolerance &&
+
+            Math.abs(
+                this.angleDifference(
+                    euler.z,
+                    rotation.z
+                )
+            ) <= tolerance
+        );
+    }
+
+    // ─────────────────────────────────────────
+// Buttons
+// ─────────────────────────────────────────
+
+getButtons(controller, requirements) {
+
+    if (
+        requirements.trigger !== undefined &&
+        Math.abs(
+            controller.trigger -
+            requirements.trigger
+        ) > (requirements.triggerTolerance ?? 0.1)
+    ) {
+        return false;
+    }
+
+    if (
+        requirements.grip !== undefined &&
+        Math.abs(
+            controller.grip -
+            requirements.grip
+        ) > (requirements.gripTolerance ?? 0.1)
+    ) {
+        return false;
+    }
+
+    if (
+        requirements.primary !== undefined &&
+        Math.abs(
+            controller.primary -
+            requirements.primary
+        ) > (requirements.primaryTolerance ?? 0.1)
+    ) {
+        return false;
+    }
+
+    if (
+        requirements.secondary !== undefined &&
+        Math.abs(
+            controller.secondary -
+            requirements.secondary
+        ) > (requirements.secondaryTolerance ?? 0.1)
+    ) {
+        return false;
+    }
+
+    return true;
+}
+
+    // ─────────────────────────────────────────
+    // Single controller
+    // ─────────────────────────────────────────
+
+    isControllerComplete(controller, requirements) {
+        if (!requirements) {
+            return true;
+        }
+
+        return (
+            this.getPosition(
+                controller,
+                requirements
+            ) &&
+
+            this.getRotation(
+                controller,
+                requirements
+            ) &&
+
+            this.getButtons(
+                controller,
+                requirements
+            )
+        );
+    }
+
+    // ─────────────────────────────────────────
+    // Complete gesture
+    // ─────────────────────────────────────────
+
+    isComplete(controllers) {
+
+        // If a right-hand requirement exists,
+        // the right controller must satisfy it.
+        if (
+            this.right &&
+            !this.isControllerComplete(
+                controllers.right,
+                this.right
+            )
+        ) {
+            return false;
+        }
+
+        // If a left-hand requirement exists,
+        // the left controller must satisfy it.
+        if (
+            this.left &&
+            !this.isControllerComplete(
+                controllers.left,
+                this.left
+            )
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+}
+
+// =============================================
+// Spell State Definitons
+// =============================================
+
+const controllers = new Controllers();
+
+const elxi01 = new spellGesture({
+    state: "elxi01",
+
+    right: {
+        position: {
+            x: 0.3,
+            y: -0.2,
+            z: -0.4
+        },
+        rotation: {
+            x: 1.5,
+            y: 0.2,
+            z: 1.1
+        },
+        positionTolerance: 0.5,
+        rotationTolerance: 0.5,
+        trigger: 1, triggerTolerance: 0,
+        grip: 0.5, gripTolerance: 0.5,
+    }
+});
+
+// =============================================
+// State Machine Architecture
+// =============================================
+
+class SpellGestureSequence { // Uses spellGesture objects to identify which gesture state the spell is currently in
+
+        constructor(spell, states) {
+            this.spell = spell;
+            this.states = states;
+            this.currentState = 0;
+        }
+    update(controllers) {
+
+        // Get the current gesture state
+        const state = this.states[this.currentState];
+
+        // Check if the current gesture state is complete
+        if (state.isComplete(controllers)) {
+
+            // Move to the next state
+            this.currentState++;
+
+            // If there are no states left, the entire gesture has been completed
+            if (this.currentState >= this.states.length) {
+                this.cast();
+            }
+        }
+    }
+
+    cast() {
+        console.log(`${this.spell} CAST`);
+        this.reset(); // Reset the sequence so it can be used again
+    }
+
+    reset() {
+
+        this.currentState = 0;
+    }
+}
+
+    // ─────────────────────────────────────────
+    // Sequence Definitions
+    // ─────────────────────────────────────────
+
+    const elxiGesture = new SpellGestureSequence("Elxi",
+        [
+            elxi01
+        ]);
+    
+        function checkSpells() {
+            elxiGesture.update(controllers);
+    
+            requestAnimationFrame(checkSpells);
+        }
+        
+        checkSpells();
+
+
+// =============================================
+// Controller Data Logs
+// =============================================
+
+document.addEventListener("keydown", (event) => {
+    if (event.code === "Space") {
+
+        const left = controllers.left;
+        const requirements = elxi01.right;
+
+        console.log("Position:", elxi01.getPosition(left, requirements));
+        console.log("Rotation:", elxi01.getRotation(left, requirements));
+
+        console.log("Actual trigger:", left.trigger);
+        console.log("Required trigger:", requirements.trigger);
+
+        console.log("Actual grip:", left.grip);
+        console.log("Required grip:", requirements.grip);
+
+        const euler =
+            new THREE.Euler().setFromQuaternion(
+                left.rotation.relative
+            );
+
+        console.log("Actual rotation:", {
+            x: euler.x,
+            y: euler.y,
+            z: euler.z
+        });
+
+        console.log("Required rotation:", requirements.rotation);
+
+        console.log("COMPLETE:", elxi01.isComplete(controllers));
+    }
+});
