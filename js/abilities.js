@@ -682,7 +682,7 @@ class SpellGestureSequence { // Uses spellGesture objects to identify which gest
     }
 
     cast() {
-        console.log(`${this.spell} CAST`);
+        console.log(`${this.spell.name} CAST`);
         this.reset(); // Reset the sequence so it can be used again
     }
 
@@ -696,7 +696,7 @@ class SpellGestureSequence { // Uses spellGesture objects to identify which gest
     // Sequence Definitions
     // ─────────────────────────────────────────
 
-    const elxiGesture = new SpellGestureSequence("Elxi",
+    const elxiGesture = new SpellGestureSequence(Elxi,
         [
             elxi01
         ]);
