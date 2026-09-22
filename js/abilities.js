@@ -2,6 +2,8 @@
 // Spell Data
 // =============================================
 
+import { physics } from "./physics.js"; // Import code from physics.js in order to manipulate bodies with the spells
+
 class Spell {
     constructor({
         name, // name of the spell
@@ -656,39 +658,79 @@ const elxi01 = new spellGesture({
 // State Machine Architecture
 // =============================================
 
-class SpellGestureSequence { // Uses spellGesture objects to identify which gesture state the spell is currently in
+class SpellGestureSequence {
+    constructor(spell, states, maxDuration = 1.0) {
+        this.spell = spell;
+        this.states = states;
+        this.maxDuration = maxDuration;
+        this.currentState = 0;
+        this.startTime = null;
+        this.stateStartTime = null;
+        this.totalTime = 0;
+        this.stateTimes = [];
+    }
+    get currentGestureState() {
+        return this.states[this.currentState] ?? null;
+    }
 
-        constructor(spell, states) {
-            this.spell = spell;
-            this.states = states;
-            this.currentState = 0;
-        }
     update(controllers) {
-
-        // Get the current gesture state
+        const now = performance.now();
+    
+        // Beginning a new gesture
+        if (this.currentState === 0 && this.startTime === null) {
+            if (this.states[0].isComplete(controllers)) {
+                this.startTime = now;
+                this.stateStartTime = now;
+    
+                // One-state gesture
+                if (this.states.length === 1) {
+                    this.stateTimes.push(0);
+                    this.totalTime = 0;
+                    this.cast();
+                    this.reset();
+                    return;
+                }
+    
+                this.currentState++;
+            }
+    
+            return;
+        }
+    
+        // Entire gesture took too long
+        if (now - this.startTime > this.maxDuration) {
+            this.reset();
+            return;
+        }
+    
         const state = this.states[this.currentState];
-
-        // Check if the current gesture state is complete
+    
         if (state.isComplete(controllers)) {
-
-            // Move to the next state
+            this.stateTimes.push(now - this.stateStartTime);
+    
+            this.stateStartTime = now;
             this.currentState++;
-
-            // If there are no states left, the entire gesture has been completed
+    
             if (this.currentState >= this.states.length) {
+                this.totalTime = now - this.startTime;
                 this.cast();
+                this.reset();
             }
         }
     }
 
     cast() {
-        console.log(`${this.spell.name} CAST`);
-        this.reset(); // Reset the sequence so it can be used again
+        console.log(`${this.spell.name} CASTED`);
+        console.log("Total gesture time:", this.totalTime);
+        console.log("State times:", this.stateTimes);
     }
 
     reset() {
-
         this.currentState = 0;
+        this.startTime = null;
+        this.stateStartTime = null;
+        this.totalTime = 0;
+        this.stateTimes = [];
     }
 }
 
@@ -699,7 +741,9 @@ class SpellGestureSequence { // Uses spellGesture objects to identify which gest
     const elxiGesture = new SpellGestureSequence(Elxi,
         [
             elxi01
-        ]);
+        ],
+        1.0
+        );
     
         function checkSpells() {
             elxiGesture.update(controllers);
@@ -711,11 +755,27 @@ class SpellGestureSequence { // Uses spellGesture objects to identify which gest
 
 
 // =============================================
+// Spell Effects
+// =============================================
+
+    // Elxi 
+
+    if (SpellGestureSequence.currentState === elxi01) {
+        const origin = controllers.right.position.world;
+    
+        const direction = new THREE.Vector3(0, 0, -1);
+        direction.applyEuler(controllers.right.rotation.world);
+
+        physics.body.applyVelocity(direction, 50)
+    }
+
+
+// =============================================
 // Controller Data Logs
 // =============================================
 
 document.addEventListener("keydown", (event) => {
-    if (event.code === "Space") {
+    if (event.code === "Enter") {
 
         const left = controllers.left;
         const requirements = elxi01.right;
@@ -743,5 +803,27 @@ document.addEventListener("keydown", (event) => {
         console.log("Required rotation:", requirements.rotation);
 
         console.log("COMPLETE:", elxi01.isComplete(controllers));
+    }
+});
+
+
+document.addEventListener("keydown", (event) => {
+    if (event.code === "Space") {
+        const origin = controllers.right.position.world;
+        const rotation = controllers.right.rotation.world;
+        const direction = new THREE.Vector3(0, 0, -1);
+
+        direction.applyEuler(
+            new THREE.Euler(
+                rotation.x,
+                rotation.y,
+                rotation.z,
+                "XYZ"
+            )
+        );
+        const ray1 = physics.raycast(new THREE.Vector3(0, 0.2, -3), new THREE.Vector3(0, 0, -1), 10)
+        console.log("Scene:", physics.scene);
+        console.log("Scene object3D:", physics.scene?.object3D);
+        console.log(ray1.body)
     }
 });

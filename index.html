@@ -118,9 +118,10 @@
     <!-- Interactable Ball & Ground -->
 
     <a-sphere
+      id = "ball"
       class="grabbable"
       grabbable
-      position="0 1 -2"
+      position="0 1 -5"
       radius="0.3"
       color="red"
       dynamic-body="shape: sphere; sphereRadius: 0.3"
@@ -128,6 +129,7 @@
     </a-sphere>
 
     <a-plane
+      id = "ground-visual"
       position="0 0 0"
       rotation="-90 0 0"
       width="20"
@@ -139,6 +141,7 @@
     <!-- Physics ground -->
 
     <a-box
+      id = "ground-physics"
       position="0 -0.05 0"
       width="20"
       height="0.1"
@@ -166,13 +169,14 @@
       shadow-camera-bottom="-5"
       shadow-camera-near="0.1"
       shadow-camera-far="20"
-      shadow-map-width="4096"
-      shadow-map-height="4096">
+      shadow-map-width="1024"
+      shadow-map-height="1024">
     </a-light>
 
   </a-scene>
 
   <script type="module" src="./js/main.js"></script>
+  <script type="module" src="./js/physics.js"></script>
   <script type="module" src="./js/abilities.js"></script>
 
 </body>
