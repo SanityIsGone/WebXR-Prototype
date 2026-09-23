@@ -806,24 +806,13 @@ document.addEventListener("keydown", (event) => {
     }
 });
 
-
 document.addEventListener("keydown", (event) => {
     if (event.code === "Space") {
         const origin = controllers.right.position.world;
         const rotation = controllers.right.rotation.world;
+
         const direction = new THREE.Vector3(0, 0, -1);
 
-        direction.applyEuler(
-            new THREE.Euler(
-                rotation.x,
-                rotation.y,
-                rotation.z,
-                "XYZ"
-            )
-        );
-        const ray1 = physics.raycast(new THREE.Vector3(0, 0.2, -3), new THREE.Vector3(0, 0, -1), 10)
-        console.log("Scene:", physics.scene);
-        console.log("Scene object3D:", physics.scene?.object3D);
-        console.log(ray1.body)
+        direction.applyQuaternion(rotation);
     }
 });

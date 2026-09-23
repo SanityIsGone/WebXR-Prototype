@@ -50,89 +50,11 @@ class Gravity {
     }
 }
 
-class Ray {
-    constructor(physics, origin, direction, limit) {
-        this.physics = physics;
-
-        this.origin = origin;
-        this.direction = direction;
-        this.direction.normalize();
-        this.limit = limit;
-
-        this.raycaster = new THREE.Raycaster();
-
-        this.hit = null;
-        this.position = null;
-        this.body = null;
-
-        // Visual ray
-        this.visual = document.createElement("a-entity");
-        this.visual.setAttribute("line", {
-            start: `${origin.x} ${origin.y} ${origin.z}`,
-            end: `${origin.x + direction.x * limit} ${origin.y + direction.y * limit} ${origin.z + direction.z * limit}`,
-            color: "#00ffff"
-        });
-
-        physics.scene.appendChild(this.visual);
-    }
-
-    update() {
-        this.raycaster.set(
-            this.origin,
-            this.direction
-        );
-
-        this.raycaster.far = this.limit;
-
-        const intersections =
-            this.raycaster.intersectObjects(
-                this.physics.scene.object3D.children,
-                true
-            );
-
-        if (intersections.length > 0) {
-            const intersection = intersections[0];
-
-            this.hit = intersection.object;
-            this.position = intersection.point;
-
-            if (this.hit.el && this.hit.el.body) {
-                this.body = new Body(this.hit.el);
-            } else {
-                this.body = null;
-            }
-        } else {
-            this.hit = null;
-            this.position = null;
-            this.body = null;
-        }
-
-        // Update visual ray
-        const end = this.position ?? new THREE.Vector3(
-            this.origin.x + this.direction.x * this.limit,
-            this.origin.y + this.direction.y * this.limit,
-            this.origin.z + this.direction.z * this.limit
-        );
-
-        this.visual.setAttribute("line", {
-            start: `${this.origin.x} ${this.origin.y} ${this.origin.z}`,
-            end: `${end.x} ${end.y} ${end.z}`,
-            color: "#00ffff"
-        });
-    }
-
-    destroy() {
-        this.physics.rays.delete(this);
-        this.visual.remove();
-    }
-}
-
 class Physics {
     constructor() {
         this.world = null;
         this.gravity = new Gravity(this);
         this.body = {};
-        this.rays = new Set();
         this.scene = null;
     }
 
@@ -144,27 +66,6 @@ class Physics {
         }
 
         return new Body(element);
-    }
-
-    raycast(origin, direction, limit) {
-        const ray = new Ray(
-            this,
-            origin,
-            direction,
-            limit
-        );
-
-        this.rays.add(ray);
-
-        ray.update();
-
-        return ray;
-    }
-
-    tick() {
-        for (const ray of this.rays) {
-            ray.update();
-        }
     }
 
     init() {
